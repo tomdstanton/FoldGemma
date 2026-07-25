@@ -1,0 +1,74 @@
+[project]
+name = "foldgemma"
+description = "FoldGemma: Protein folding language models"
+requires-python = ">=3.10"
+dependencies = [
+    "huggingface-hub>=1.24.0",
+    "safetensors",
+]
+readme = { file = "README.md", content-type = "text/markdown" }
+dynamic = ["version"]
+keywords = ["bioinformatics", "genomics", "serotyping", "microbiology"]
+license = { file = "LICENSE" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Typing :: Typed",
+]
+
+[project.scripts]
+foldgemma = "foldgemma.cli:main"
+
+[project.optional-dependencies]
+train = [
+    "flax",
+    "jax",
+    "optax",
+    "orbax-checkpoint>=0.11.39",
+    "seqio",
+    "tensorflow",
+]
+inference = [
+    "torch",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+]
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling", "hatch-vcs"]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/foldgemma/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/foldgemma"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+exclude = [".agents", ".git", ".venv", "__pycache__"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.ty]
+# Static type checking configuration
