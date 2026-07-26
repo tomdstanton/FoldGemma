@@ -3,6 +3,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/release/python-3100/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C.svg)](https://pytorch.org/)
+[![Hugging Face](https://img.shields.io/badge/🤗_Hugging_Face-Models-orange.svg)](https://huggingface.co/tomdstanton)
 [![Status](https://img.shields.io/badge/status-active-success.svg)](#)
 
 FoldGemma is an ultra-fast structural representation model based on the Gemma transformer architecture. It bridges the gap between protein language models and structural bioinformatics by rapidly translating raw amino acid sequences into structural 3Di tokens (Foldseek's structural alphabet). FoldGemma provides a pure PyTorch native pipeline for ultra-fast, high-throughput structural mapping.
@@ -12,6 +13,18 @@ FoldGemma is an ultra-fast structural representation model based on the Gemma tr
 Protein structure prediction is a computationally intensive task. While tools like AlphaFold offer extreme accuracy, they are too slow for large-scale metagenomic sweeps. FoldGemma takes a different approach: rather than predicting 3D coordinates, it translates 1D amino acid sequences into a 1D sequence of **3Di tokens**—the structural alphabet powering [Foldseek](https://github.com/steineggerlab/foldseek).
 
 By formulating structure prediction as a Sequence-to-Sequence (Seq2Seq) problem and running inference on an ultra-fast PyTorch architecture, FoldGemma can "fold" millions of proteins in a fraction of the time, allowing you to instantly search metagenomes using Foldseek.
+
+## Architecture: FoldGemma vs FoldGemmaT5
+
+FoldGemma provides two distinct architectural variants, optimized for different use cases:
+
+1. **FoldGemma (Encoder-Only Classification)**
+   - **How it works:** A pure bidirectional encoder network (based on Gemma's transformer blocks) that reads the amino acid sequence and applies a dense classification head. It simultaneously predicts the 3Di token for every residue in a single forward pass.
+   - **Best for:** Ultra-fast, high-throughput structural mapping. Because it operates in O(1) time without autoregressive decoding, it is blisteringly fast and perfect for massive database sweeps.
+
+2. **FoldGemmaT5 (Encoder-Decoder Generative)**
+   - **How it works:** A full sequence-to-sequence T5-style architecture. It uses the same Gemma encoder blocks to read the amino acid sequence, but couples it with causal decoder blocks and cross-attention mechanisms.
+   - **Best for:** Complex generative tasks, probabilistic sampling, and autoregressive generation. While slower than the encoder-only variant, the causal decoder provides the architectural capacity for advanced language modeling and sequence generation.
 
 ## Installation
 
