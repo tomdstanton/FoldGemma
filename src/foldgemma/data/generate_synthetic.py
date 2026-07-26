@@ -35,11 +35,14 @@ def generate_synthetic_protein(
     return inputs_aa, targets_3di, plddt
 
 
-def serialize_example(inputs: str, targets: str, plddt: Sequence[float] | np.ndarray) -> bytes:
+def serialize_example(inputs: str | bytes, targets: str | bytes, plddt: Sequence[float] | np.ndarray) -> bytes:
     """Serialize inputs, targets, and plddt array into a TFRecord Example binary string."""
+    in_bytes = inputs if isinstance(inputs, bytes) else inputs.encode("utf-8")
+    tgt_bytes = targets if isinstance(targets, bytes) else targets.encode("utf-8")
+    
     feature = {
-        "inputs": tf.train.Feature(bytes_list=tf.train.BytesList(value=[inputs.encode("utf-8")])),
-        "targets": tf.train.Feature(bytes_list=tf.train.BytesList(value=[targets.encode("utf-8")])),
+        "inputs": tf.train.Feature(bytes_list=tf.train.BytesList(value=[in_bytes])),
+        "targets": tf.train.Feature(bytes_list=tf.train.BytesList(value=[tgt_bytes])),
         "plddt": tf.train.Feature(float_list=tf.train.FloatList(value=list(plddt))),
     }
     example_proto = tf.train.Example(features=tf.train.Features(feature=feature))

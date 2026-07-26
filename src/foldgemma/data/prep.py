@@ -18,29 +18,85 @@ from foldgemma.data.vocabulary import AMINO_ACIDS
 
 logger = logging.getLogger(__name__)
 
-THREE_TO_ONE = {
-    "ALA": "A", "CYS": "C", "ASP": "D", "GLU": "E", "PHE": "F",
-    "GLY": "G", "HIS": "H", "ILE": "I", "LYS": "K", "LEU": "L",
-    "MET": "M", "ASN": "N", "PRO": "P", "GLN": "Q", "ARG": "R",
-    "SER": "S", "THR": "T", "VAL": "V", "TRP": "W", "TYR": "Y",
-    "SEC": "U", "PYL": "O"
-}
+import numba as nb
 
-def parse_pdb_string(pdb_string: str) -> Tuple[str, np.ndarray]:
-    """Extract AA sequence and pLDDT (B-factor) from CA atoms in PDB string."""
-    aa_list = []
-    plddts = []
-    for line in pdb_string.splitlines():
-        if line.startswith("ATOM ") and line[12:16] == " CA ":
-            res_name = line[17:20].strip()
-            aa = THREE_TO_ONE.get(res_name, "X")
-            try:
-                plddt = float(line[60:66].strip())
-            except ValueError:
-                plddt = 0.0
-            aa_list.append(aa)
-            plddts.append(plddt)
-    return "".join(aa_list), np.array(plddts, dtype=np.float32)
+@nb.njit
+def _three_to_one(b1: int, b2: int, b3: int) -> int:
+    if b1 == 65 and b2 == 76 and b3 == 65: return 65 # ALA -> A
+    if b1 == 67 and b2 == 89 and b3 == 83: return 67 # CYS -> C
+    if b1 == 65 and b2 == 83 and b3 == 80: return 68 # ASP -> D
+    if b1 == 71 and b2 == 76 and b3 == 85: return 69 # GLU -> E
+    if b1 == 80 and b2 == 72 and b3 == 69: return 70 # PHE -> F
+    if b1 == 71 and b2 == 76 and b3 == 89: return 71 # GLY -> G
+    if b1 == 72 and b2 == 73 and b3 == 83: return 72 # HIS -> H
+    if b1 == 73 and b2 == 76 and b3 == 69: return 73 # ILE -> I
+    if b1 == 76 and b2 == 89 and b3 == 83: return 75 # LYS -> K
+    if b1 == 76 and b2 == 69 and b3 == 85: return 76 # LEU -> L
+    if b1 == 77 and b2 == 69 and b3 == 84: return 77 # MET -> M
+    if b1 == 65 and b2 == 83 and b3 == 78: return 78 # ASN -> N
+    if b1 == 80 and b2 == 82 and b3 == 79: return 80 # PRO -> P
+    if b1 == 71 and b2 == 76 and b3 == 78: return 81 # GLN -> Q
+    if b1 == 65 and b2 == 82 and b3 == 71: return 82 # ARG -> R
+    if b1 == 83 and b2 == 69 and b3 == 82: return 83 # SER -> S
+    if b1 == 84 and b2 == 72 and b3 == 82: return 84 # THR -> T
+    if b1 == 86 and b2 == 65 and b3 == 76: return 86 # VAL -> V
+    if b1 == 84 and b2 == 82 and b3 == 80: return 87 # TRP -> W
+    if b1 == 84 and b2 == 89 and b3 == 82: return 89 # TYR -> Y
+    if b1 == 83 and b2 == 69 and b3 == 67: return 85 # SEC -> U
+    if b1 == 80 and b2 == 89 and b3 == 76: return 79 # PYL -> O
+    return 88 # X
+
+@nb.njit
+def _parse_pdb_bytes(data: np.ndarray):
+    n = len(data)
+    max_res = n // 80 + 1
+    aa_out = np.empty(max_res, dtype=np.uint8)
+    plddt_out = np.empty(max_res, dtype=np.float32)
+    
+    count = 0
+    i = 0
+    while i < n:
+        if i + 66 <= n and data[i] == 65 and data[i+1] == 84 and data[i+2] == 79 and data[i+3] == 77 and data[i+4] == 32:
+            if data[i+12] == 32 and data[i+13] == 67 and data[i+14] == 65 and data[i+15] == 32:
+                b1 = data[i+17]
+                b2 = data[i+18]
+                b3 = data[i+19]
+                
+                aa = _three_to_one(b1, b2, b3)
+                
+                val = 0.0
+                div = 1.0
+                in_decimal = False
+                for j in range(i+60, i+66):
+                    c = data[j]
+                    if c == 32: 
+                        continue
+                    if c == 46: 
+                        in_decimal = True
+                        continue
+                    if 48 <= c <= 57:
+                        if not in_decimal:
+                            val = val * 10 + (c - 48)
+                        else:
+                            div *= 10
+                            val = val + (c - 48) / div
+                
+                aa_out[count] = aa
+                plddt_out[count] = val
+                count += 1
+                
+        while i < n and data[i] != 10:
+            i += 1
+        i += 1
+        
+    return aa_out[:count], plddt_out[:count]
+
+
+def parse_pdb_string(pdb_string: str) -> Tuple[bytes, np.ndarray]:
+    """Extract AA sequence and pLDDT (B-factor) from CA atoms using high-speed numba JIT."""
+    pdb_bytes = np.frombuffer(pdb_string.encode('ascii'), dtype=np.uint8)
+    aa_arr, plddt_arr = _parse_pdb_bytes(pdb_bytes)
+    return aa_arr.tobytes(), plddt_arr
 
 
 class SteineggerLabDataset(IterableDataset):
@@ -76,7 +132,8 @@ class SteineggerLabDataset(IterableDataset):
                         if len(parts) != 2:
                             continue
                             
-                        name, targets_3di = parts
+                        name, targets_3di_str = parts
+                        targets_3di = targets_3di_str.encode('ascii')
                         
                         try:
                             pdb_string = db[name]

@@ -14,11 +14,11 @@ def test_parse_pdb_string():
 
     aa_seq, plddts = parse_pdb_string(mock_pdb)
 
-    assert aa_seq == "MK"
+    assert aa_seq == b"MK"
     assert len(plddts) == 2
     assert np.allclose(plddts, np.array([90.50, 85.25], dtype=np.float32))
 
 def test_parse_pdb_string_empty():
     aa_seq, plddts = parse_pdb_string("")
-    assert aa_seq == ""
+    assert aa_seq == b""
     assert len(plddts) == 0
