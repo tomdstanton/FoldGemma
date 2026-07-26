@@ -7,8 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from foldgemma.config import FoldGemmaConfig
-from foldgemma.inference.models.base import BaseFoldModel
-from foldgemma.inference.models.gemma import GemmaAttention, GemmaMLP, RMSNorm
+from foldgemma.models.base import BaseFoldModel
+from foldgemma.models.gemma import GemmaAttention, GemmaMLP, RMSNorm
 
 
 class GemmaCrossAttention(nn.Module):

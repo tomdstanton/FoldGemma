@@ -170,23 +170,23 @@ class GemmaModel(nn.Module):
 def __getattr__(name: str):
     """Dynamic module attribute lookup for backward-compatible re-exports."""
     if name == "BaseFoldModel":
-        from foldgemma.inference.models.base import BaseFoldModel
+        from foldgemma.models.base import BaseFoldModel
 
         return BaseFoldModel
     if name == "FoldGemma":
-        from foldgemma.inference.models.foldgemma import FoldGemma
+        from foldgemma.models.foldgemma import FoldGemma
 
         return FoldGemma
     if name == "FoldGemmaT5":
-        from foldgemma.inference.models.foldgemma_t5 import FoldGemmaT5
+        from foldgemma.models.foldgemma_t5 import FoldGemmaT5
 
         return FoldGemmaT5
     if name == "GemmaCrossAttention":
-        from foldgemma.inference.models.foldgemma_t5 import GemmaCrossAttention
+        from foldgemma.models.foldgemma_t5 import GemmaCrossAttention
 
         return GemmaCrossAttention
     if name == "GemmaT5DecoderLayer":
-        from foldgemma.inference.models.foldgemma_t5 import GemmaT5DecoderLayer
+        from foldgemma.models.foldgemma_t5 import GemmaT5DecoderLayer
 
         return GemmaT5DecoderLayer
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

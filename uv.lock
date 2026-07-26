@@ -603,26 +603,58 @@ wheels = [
 ]
 
 [[package]]
+name = "foldcomp"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9c/e5/219e4fa071f6b6179dcd05da70a1bc3a05f7243c60f8a18869bd1227c215/foldcomp-1.0.0.tar.gz", hash = "sha256:1e4abc2aaff3ff841bcd5561ff472783275b72f6a1445e77b303f6676598b196", size = 9684, upload-time = "2026-02-10T11:34:23.432Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6c/78/1f6acb3265db13ff6a0c92a587dca5c41b4bba4f6bb8c25e68dbdcfe80d8/foldcomp-1.0.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:49f6e11ed36a1400cdc5eef319c8ee359d2447843bd083af0e2bda478e5a22a5", size = 382661, upload-time = "2026-02-10T11:33:38.943Z" },
+    { url = "https://files.pythonhosted.org/packages/40/8e/789a5f5e28e0b33ec62a6084c90901a94a6e45e7a1ac302296be3f211a73/foldcomp-1.0.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:c26ef55ab4193a891f755dadc867a1a12d1822d56a7bf08e5f4c73dbeb08958b", size = 201875, upload-time = "2026-02-10T11:33:40.446Z" },
+    { url = "https://files.pythonhosted.org/packages/0c/54/5e092f01fbb2e7f495ffbe244057d0dc47478bdc5994115ddf6224381505/foldcomp-1.0.0-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:c1d01576d718e7bc9ed671679e8d50e16c08132096f7467115f685a4d73b1c39", size = 249662, upload-time = "2026-02-10T11:33:41.308Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/c0/e325004eb60aee234dab7ee1ad2011b34b5ef8eaccea6331c8b1e40283b0/foldcomp-1.0.0-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:6f37a1acaeeb470e79676022cef740ae899c4f12adc6d4fadaf17c55d24f7c8a", size = 1286057, upload-time = "2026-02-10T11:33:42.202Z" },
+    { url = "https://files.pythonhosted.org/packages/53/14/462273ad033f117b2cea2b13148546d75e94cd779c55b84b3df47eab6ec5/foldcomp-1.0.0-cp310-cp310-win32.whl", hash = "sha256:6ba5ad53c0f4902c04694c52bfc22e58590d8deb4546d913be8e7095012c6919", size = 134892, upload-time = "2026-02-10T11:33:43.773Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/47/e75240583f6734890575566a9402192384c8a05161cd9f5bd2415dd450ad/foldcomp-1.0.0-cp310-cp310-win_amd64.whl", hash = "sha256:9a593a3040cfcb87069cf4af58b120090fa43aa62bbe37a36053fb222d9c493a", size = 145825, upload-time = "2026-02-10T11:33:44.681Z" },
+    { url = "https://files.pythonhosted.org/packages/50/a7/7af3f44a1222d2e0c93dffd6a0a9b076424dae895e096df187ec83060532/foldcomp-1.0.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:a01379b733e4ae507d8917d46ccf141be5bc70d8881a64cf1173c997c9dfbbdd", size = 382662, upload-time = "2026-02-10T11:33:45.556Z" },
+    { url = "https://files.pythonhosted.org/packages/66/54/aa2b8ed90db9a7e77724ba07afe796f59c70fb47f768ac15c4f7cdf1cbef/foldcomp-1.0.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:00c65611c755a693b9ad7e098985ab33313674c90af397dc3f2b0197d7c33db2", size = 201878, upload-time = "2026-02-10T11:33:47.048Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/6e/ee16cddd49bd3d8dfb18642d08ed368e20be4fb672ab9371a9b503eb6a2c/foldcomp-1.0.0-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:358ca8a31dcf2f22637ae0874aaef6a80c03a19974dde4f0a3ac49e117fd800d", size = 249663, upload-time = "2026-02-10T11:33:48.312Z" },
+    { url = "https://files.pythonhosted.org/packages/71/d0/d6685c7734204368084b0ece0d786fea3cea32762c9794def67c00af2317/foldcomp-1.0.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:365f9e6515ab3bc1ed6154c5251efaef0d4ac9d6b3cc00a6de4d22c2d2ee09a5", size = 1286059, upload-time = "2026-02-10T11:33:49.332Z" },
+    { url = "https://files.pythonhosted.org/packages/13/22/6e4e05bf778cfc53895f0e13cbfe80cb4f1fccf4e3661d026d91d1fee348/foldcomp-1.0.0-cp311-cp311-win32.whl", hash = "sha256:2daaa0b394bca978b5066444e6bf39752f36ed145d0a595d45aa1133968d19dd", size = 134890, upload-time = "2026-02-10T11:33:50.77Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/44/99b27a5e5c061e098941c79f35d9cf7d03fc53f66d604f2b4d09decbca10/foldcomp-1.0.0-cp311-cp311-win_amd64.whl", hash = "sha256:eed1c8283bffa25bbf7db5337e10fc719d985b2f0fb2a2972ae717a4a0eee52c", size = 145832, upload-time = "2026-02-10T11:33:51.665Z" },
+    { url = "https://files.pythonhosted.org/packages/36/04/6a073130a518b9a3bc7d399f43edcfdf70bb33802870b5b52a679de1a418/foldcomp-1.0.0-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:75cb2df1c1ed71f99c957a8f9990f9f60e44d7ed2036d72eeb474b97ce4db448", size = 382509, upload-time = "2026-02-10T11:33:53.008Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/61/db4705d67ccb6c34b164784b16d7b2f88d27c95f1c372340d022f190c845/foldcomp-1.0.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:a7b59e1694d6974f70728e7b74ba348966bcc391e65ca04a32905c0f07fa1e98", size = 201614, upload-time = "2026-02-10T11:33:53.906Z" },
+    { url = "https://files.pythonhosted.org/packages/f9/fa/c0b302aa352c41ef8454699c632c091cafcb297ef71ae715f047e757b010/foldcomp-1.0.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:6c08480b127a93b3fde495dfd7cdb718ae15cee7a5d90e9d04a0e64aa377d69d", size = 249785, upload-time = "2026-02-10T11:33:54.774Z" },
+    { url = "https://files.pythonhosted.org/packages/62/bb/c7ea2c105f9a39bfe58cb2c2c9e58919224247a0ae08ffd80ef3e4fcecc7/foldcomp-1.0.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:d163916d2b889840df3db7d81eec3ccf554ee9fc7d4f5a889dd973e1003bee8b", size = 1286207, upload-time = "2026-02-10T11:33:55.721Z" },
+    { url = "https://files.pythonhosted.org/packages/c2/22/1f9ea6a606e8be734dc421cebb4e04d4de38d88d5061ea9360a88b024f20/foldcomp-1.0.0-cp312-cp312-win32.whl", hash = "sha256:f21f3d5281c11a2f9341d1c98ce2d2dd842dbd3a4ba4201c6ef9c4d27f2b67d2", size = 135016, upload-time = "2026-02-10T11:33:57.226Z" },
+    { url = "https://files.pythonhosted.org/packages/93/3d/022875e98e485c591ea6e6c963783b4f352a7fc3ddb81b1aa5b22b8ec391/foldcomp-1.0.0-cp312-cp312-win_amd64.whl", hash = "sha256:5547adc6f58b0f40266ce8ceac759d04fa743c829962c38b71d3bca5121c06c2", size = 145985, upload-time = "2026-02-10T11:33:58.343Z" },
+    { url = "https://files.pythonhosted.org/packages/1f/20/937d663923c64cf94729b235568da21d4c98f1ec43b5095155335572a5b8/foldcomp-1.0.0-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:728c10b9363d4c0d108f0659a8b9628be0da90bfe80f44add19b54d9597ccad0", size = 382480, upload-time = "2026-02-10T11:33:59.228Z" },
+    { url = "https://files.pythonhosted.org/packages/81/d1/e8a23efda4e7b095e7538eb830baa5c08a0cc8a18fcbf1628047b035e2fa/foldcomp-1.0.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:dc3056be05c1af7c9509eac182cf4fd9ae28d16c8b501c17ec1c61a92c6e1bce", size = 201599, upload-time = "2026-02-10T11:34:00.105Z" },
+    { url = "https://files.pythonhosted.org/packages/3d/e8/3e8af4570b4f8066881fac7254f9b95b5b4a58f28dc32234b3c8ed30bcd3/foldcomp-1.0.0-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9115a3b0f8d2b8ae09993ae380af4795bb72b688f60c688f81b32b8d8d96e88e", size = 249785, upload-time = "2026-02-10T11:34:00.96Z" },
+    { url = "https://files.pythonhosted.org/packages/87/ea/a6a382eac349ed72ca7eb2a0915d26b5ab07600d7139347528bd7ec68664/foldcomp-1.0.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:e8fcfab57dafe66de84d570feba15ef029895a52df8079f03bdae8047a60dd3e", size = 1286230, upload-time = "2026-02-10T11:34:02.841Z" },
+    { url = "https://files.pythonhosted.org/packages/71/f8/cd544a5613cf1bc4d8b3b5e52b3fe2b3f04fa1943bb3f48e4d3572183c3e/foldcomp-1.0.0-cp313-cp313-win32.whl", hash = "sha256:35c17307f20d8dcb72bca84bd43bc521f16cbc0d74ec4630adda484fe30ffff7", size = 135030, upload-time = "2026-02-10T11:34:03.89Z" },
+    { url = "https://files.pythonhosted.org/packages/fa/a3/065516e7778fac4283a8de4c8e80526e2b06b3d9a2fff250985b5a2a33a1/foldcomp-1.0.0-cp313-cp313-win_amd64.whl", hash = "sha256:e30c7b5240ad86bd2c0235841184900470a7bfd15adce448b8d0eaabf4928ad7", size = 145994, upload-time = "2026-02-10T11:34:04.674Z" },
+    { url = "https://files.pythonhosted.org/packages/77/03/4b24c85dfeb5cb6dcdfea1eda2d885e998f487288ab81fbf97da4b603d44/foldcomp-1.0.0-cp314-cp314-macosx_10_13_universal2.whl", hash = "sha256:1123570138adf2c5fb53b530a97652991983762cd39fec14e7bce694b6517c4f", size = 382490, upload-time = "2026-02-10T11:34:05.616Z" },
+    { url = "https://files.pythonhosted.org/packages/62/ac/3a3389c56520570603dddecbe87d80ff94265a766cc59302bcddd9e64458/foldcomp-1.0.0-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:ab13a9be07729cae6510a82c1a18d41997f0489bb2ebd8dcac4666c8210605c9", size = 201625, upload-time = "2026-02-10T11:34:06.584Z" },
+    { url = "https://files.pythonhosted.org/packages/63/95/a10868b1ef2a3e328857a3d4270fb465638a814635a63b554fcc75454f92/foldcomp-1.0.0-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:114b6f00a538359bfa35f70e754f34a8ed70f8166f12ddaef5659892ac387c53", size = 249827, upload-time = "2026-02-10T11:34:07.503Z" },
+    { url = "https://files.pythonhosted.org/packages/bf/75/cd71771d2d4b03176d3e411a2a19822a67d2b5dda437ad75636d57ee09b5/foldcomp-1.0.0-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:3c31c453284ae6c939b85578757bbf8f7483d411dae04a834b78c14e849c6565", size = 1286257, upload-time = "2026-02-10T11:34:08.895Z" },
+    { url = "https://files.pythonhosted.org/packages/e6/15/87171b090eb41be6480c74ff593afa252a78121c4df58d39d0b039b81f6a/foldcomp-1.0.0-cp314-cp314-win32.whl", hash = "sha256:205f300de632914fd33fbeb4e1f09e51d7f07256c5fb442aad3fd11c7a0a8535", size = 140595, upload-time = "2026-02-10T11:34:09.819Z" },
+    { url = "https://files.pythonhosted.org/packages/80/f7/31a3ba1f5f31fed992356efac4b7c397795beb206492a7406040d1d26043/foldcomp-1.0.0-cp314-cp314-win_amd64.whl", hash = "sha256:d06cdd0b9275cda6542c60cd034b8da29adf0ca5b136ea9078fcbf9d7e3a89d7", size = 149302, upload-time = "2026-02-10T11:34:10.637Z" },
+]
+
+[[package]]
 name = "foldgemma"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub" },
     { name = "safetensors" },
+    { name = "torch" },
 ]
 
 [package.optional-dependencies]
-inference = [
-    { name = "torch" },
-]
 train = [
-    { name = "flax", version = "0.10.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "flax", version = "0.12.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "jax", version = "0.6.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "jax", version = "0.10.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
-    { name = "jax", version = "0.11.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "optax" },
-    { name = "orbax-checkpoint", version = "0.11.39", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "orbax-checkpoint", version = "0.12.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "foldcomp" },
     { name = "seqio" },
     { name = "tensorflow" },
 ]
@@ -634,17 +666,14 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "flax", marker = "extra == 'train'" },
+    { name = "foldcomp", marker = "extra == 'train'" },
     { name = "huggingface-hub", specifier = ">=1.24.0" },
-    { name = "jax", marker = "extra == 'train'" },
-    { name = "optax", marker = "extra == 'train'" },
-    { name = "orbax-checkpoint", marker = "extra == 'train'", specifier = ">=0.11.39" },
     { name = "safetensors" },
     { name = "seqio", marker = "extra == 'train'" },
     { name = "tensorflow", marker = "extra == 'train'" },
-    { name = "torch", marker = "extra == 'inference'" },
+    { name = "torch", specifier = ">=2.0.0" },
 ]
-provides-extras = ["inference", "train"]
+provides-extras = ["train"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest" }]

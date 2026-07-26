@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 from foldgemma.config import FoldGemmaConfig
-from foldgemma.inference.models.gemma import GemmaDecoderLayer, RMSNorm
+from foldgemma.models.gemma import GemmaDecoderLayer, RMSNorm
 
 
 class BaseFoldModel(nn.Module):

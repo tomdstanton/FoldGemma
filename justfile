@@ -1,20 +1,49 @@
+# FoldGemma Project Justfile
+# Run `just` to see all available commands
+
+set shell := ["bash", "-uc"]
+
+# Show available commands
+default:
+    @just --list
+
+# Clean Python virtual environments
+clean:
+    rm -rf site
+    find . -type d -name "__pycache__" -exec rm -rf {} +
+    find . -type d -name ".pytest_cache" -exec rm -rf {} +
+
+install: clean
+    uv sync
+
+# Run the test suite
+test: install
+    uv run pytest tests/
+
+# Format Python code
+fmt:
+    uv run black .
+
+# Check Python formatting
+fmt-check:
+    uv run black --check .
+
+# Lint Python code
 lint:
-	uvx run ruff check .
+    uv run ruff check .
+    uv run ty check
 
-typecheck:
-	uvx run ty check
+# Run the full CI pipeline locally (format check, lint, test)
+ci: fmt-check lint test
 
-test:
-	uv run python -m pytest tests/
+# Build the Python package
+build:
+    uv build
 
-data:
-	uv run python -m foldgemma.data.generate_synthetic
+# Publish the Python package to PyPI
+publish:
+    uv publish
 
-train:
-	uv run python -m foldgemma.train.train
-
-convert:
-	uv run python scripts/convert_jax_to_pytorch.py
-
-deploy repo_id:
-	uv run python scripts/deploy_to_hf.py --repo_id {{repo_id}}
+# Prepare Steinegger Lab AFDB data into TFRecords for training
+build-dataset tsv fcz out_dir:
+    uv run foldgemma prep --tsv {{tsv}} --fcz {{fcz}} --out-dir {{out_dir}}

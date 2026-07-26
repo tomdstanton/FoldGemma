@@ -8,7 +8,6 @@ from importlib import metadata
 from pathlib import Path
 from typing import IO
 
-import torch
 
 
 # Classes --------------------------------------------------------------------------------------------------------------
@@ -286,7 +285,7 @@ class Train(Command):
 
     def __call__(self, args: argparse.Namespace):
         self.cli.msg(f"🚀 Starting FoldGemma training pipeline...")
-        from foldgemma.api import FoldGemmaTrainer
+        from foldgemma.trainer import FoldGemmaTrainer
         from foldgemma.config import FoldGemmaConfig, ModelType
         from foldgemma.data.pipeline import FoldGemmaDataPipeline
         
@@ -330,17 +329,32 @@ class Infer(Command):
     def __call__(self, args: argparse.Namespace):
         self.cli.msg(f"🧠 Initializing FoldGemma inference engine...")
         
-        from foldgemma.api import FoldGemmaInference
+        from foldgemma import FoldGemma, FoldGemmaT5
         from foldgemma.config import FoldGemmaConfig, ModelType
         from foldgemma.data.vocabulary import Protein3diVocabulary
         from foldgemma.io import read_fasta_bytes, write_fasta_bytes
+        import torch
+        from safetensors.torch import load_file
 
         config = FoldGemmaConfig(model_type=ModelType(args.model_type))
-        model = FoldGemmaInference(config, compile_model=False) # Skip compile for faster startup if just processing a few
+        
+        # Core Library API: Just instantiate the PyTorch modules directly!
+        if config.model_type == ModelType.FOLDGEMMA_T5:
+            model = FoldGemmaT5(config)
+        else:
+            model = FoldGemma(config)
+            
+        device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
         
         if args.weights:
             self.cli.msg(f"📥 Loading weights from {args.weights}...")
-            model.load_weights(args.weights)
+            state_dict = load_file(args.weights)
+            # Cast dict to match model dtype
+            state_dict = {k: v.to(torch.bfloat16) for k, v in state_dict.items()}
+            model.load_state_dict(state_dict)
+            
+        model.to(device=device, dtype=torch.bfloat16)
+        model.eval()
             
         vocab = Protein3diVocabulary()
 
@@ -349,13 +363,15 @@ class Infer(Command):
         
         def process_sequences():
             for header, seq_bytes in self.cli.progress(read_fasta_bytes(in_handle), "🧬 Processing sequences..."):
-                input_ids = vocab._encode(seq_bytes)
+                input_ids = vocab.encode_bytes(seq_bytes)
                 input_tensor = torch.tensor([input_ids], dtype=torch.long)
                 
-                if config.model_type == ModelType.FOLDGEMMA_T5:
-                    out_tensor = model.generate(input_tensor)
-                else:
-                    out_tensor = model.predict(input_tensor)
+                input_tensor = input_tensor.to(device)
+                with torch.inference_mode(), torch.autocast(device_type=device.type, dtype=torch.bfloat16) if device.type != "mps" else torch.autocast(device_type="cpu", enabled=False):
+                    if config.model_type == ModelType.FOLDGEMMA_T5:
+                        out_tensor = model.generate(input_tensor)
+                    else:
+                        out_tensor = model(input_tensor)
                     
                 # Assuming out_tensor shape [1, seq_len, vocab_size] for FoldGemma, we need argmax
                 if config.model_type == ModelType.FOLDGEMMA:
@@ -373,10 +389,56 @@ class Infer(Command):
         self.cli.msg("✅ Inference complete.")
 
 
+class Prep(Command):
+    """🛠️ Prepare Steinegger Lab AFDB data into TFRecords for training."""
+
+    def setup_arguments(self):
+        opts = self.parser.add_argument_group("Inputs")
+        opts.add_argument("--tsv", type=str, required=True, help="Path to the 3Di TSV file")
+        opts.add_argument("--fcz", type=str, required=True, help="Path to the Foldcomp database (FCZ)")
+        opts.add_argument("--out-dir", type=str, required=True, help="Directory to output TFRecords")
+        opts.add_argument("--num-workers", type=int, default=4, help="Number of parallel PyTorch DataLoader workers")
+
+    def __call__(self, args: argparse.Namespace):
+        self.cli.msg(f"🛠️ Initializing PyTorch DataLoader for AFDB prep...")
+        from foldgemma.data.prep import write_tfrecords_from_dataset
+        
+        total = write_tfrecords_from_dataset(
+            tsv_path=args.tsv,
+            fcz_path=args.fcz,
+            out_dir=args.out_dir,
+            num_workers=args.num_workers
+        )
+        self.cli.msg(f"✅ Data prep complete! Successfully serialized {total} records to TFRecords.")
+
+
+class Deploy(Command):
+    """🚀 Deploy a trained model to the Hugging Face Hub."""
+
+    def setup_arguments(self):
+        opts = self.parser.add_argument_group("Inputs")
+        opts.add_argument("--repo-id", type=str, required=True, help="Target Hugging Face repository ID (e.g. username/foldgemma)")
+        opts.add_argument("--model-path", type=str, default="./model.safetensors", help="Path to the model file")
+        opts.add_argument("--token", type=str, default=None, help="HF API token. Falls back to HF_TOKEN env var if not set.")
+
+    def __call__(self, args: argparse.Namespace):
+        self.cli.msg(f"🚀 Deploying {args.model_path} to {args.repo_id}...")
+        from foldgemma.deploy import deploy_to_huggingface
+        
+        try:
+            deploy_to_huggingface(repo_id=args.repo_id, model_path=args.model_path, token=args.token)
+            self.cli.msg("✅ Deployment complete!")
+        except Exception as e:
+            self.cli.msg(f"❌ Deployment failed: {e}")
+            raise
+
+
 def main():
     with Cli(description="FoldGemma CLI") as cli:
         cli.add_command(Train())
         cli.add_command(Infer())
+        cli.add_command(Prep())
+        cli.add_command(Deploy())
         cli.run()
 
 if __name__ == "__main__":

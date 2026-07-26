@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 from foldgemma.config import FoldGemmaConfig
-from foldgemma.inference.models.base import BaseFoldModel
+from foldgemma.models.base import BaseFoldModel
 
 
 class FoldGemma(BaseFoldModel):

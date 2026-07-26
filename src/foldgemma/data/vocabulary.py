@@ -81,8 +81,12 @@ class Protein3diVocabulary(seqio.Vocabulary):
     def _encode(self, s: str | bytes) -> List[int]:
         """Encode Python string or bytes to token IDs."""
         if isinstance(s, bytes):
-            return [self._byte_to_id.get(b, UNK_ID) for b in s]
+            return self.encode_bytes(s)
         return [self._char_to_id.get(char, UNK_ID) for char in s]
+
+    def encode_bytes(self, s: bytes) -> List[int]:
+        """Encode bytes to token IDs."""
+        return [self._byte_to_id.get(b, UNK_ID) for b in s]
 
     def _decode(self, ids: Iterable[int]) -> str:
         """Decode token IDs to Python string."""
