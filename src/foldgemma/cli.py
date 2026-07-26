@@ -282,6 +282,7 @@ class Train(Command):
         opts.add_argument("--learning-rate", type=float, default=1e-4, help="Learning rate (default: 1e-4)")
         opts.add_argument("--checkpoint-dir", type=str, default="checkpoints", help="Directory to save checkpoints")
         opts.add_argument("--model-type", type=str, default="foldgemma", choices=["foldgemma", "foldgemma_t5"], help="Model type to train")
+        opts.add_argument("--model-size", type=str, default="small", choices=["small", "base", "large"], help="Model size variant")
 
     def __call__(self, args: argparse.Namespace):
         self.cli.msg(f"🚀 Starting FoldGemma training pipeline...")
@@ -294,7 +295,15 @@ class Train(Command):
             batch_size=args.batch_size,
         )
         
+        if args.model_size == "small":
+            config = FoldGemmaConfig.small(model_type=ModelType(args.model_type))
+        elif args.model_size == "base":
+            config = FoldGemmaConfig.base(model_type=ModelType(args.model_type))
+        else:
+            config = FoldGemmaConfig.large(model_type=ModelType(args.model_type))
+
         trainer = FoldGemmaTrainer(
+            config=config,
             learning_rate=args.learning_rate,
             model_type=ModelType(args.model_type)
         )
@@ -324,6 +333,7 @@ class Infer(Command):
             help="Output FASTA file for 3di sequences (default: stdout)"
         )
         opts.add_argument("--model-type", type=str, default="foldgemma", choices=["foldgemma", "foldgemma_t5"], help="Model type to infer")
+        opts.add_argument("--model-size", type=str, default="small", choices=["small", "base", "large"], help="Model size variant")
         opts.add_argument("--weights", type=str, default=None, help="Path to safetensors weights")
 
     def __call__(self, args: argparse.Namespace):
@@ -336,7 +346,12 @@ class Infer(Command):
         import torch
         from safetensors.torch import load_file
 
-        config = FoldGemmaConfig(model_type=ModelType(args.model_type))
+        if args.model_size == "small":
+            config = FoldGemmaConfig.small(model_type=ModelType(args.model_type))
+        elif args.model_size == "base":
+            config = FoldGemmaConfig.base(model_type=ModelType(args.model_type))
+        else:
+            config = FoldGemmaConfig.large(model_type=ModelType(args.model_type))
         
         # Core Library API: Just instantiate the PyTorch modules directly!
         if config.model_type == ModelType.FOLDGEMMA_T5:
