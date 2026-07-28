@@ -84,16 +84,18 @@ class FoldGemmaTrainer:
         if self.model is None or self.optimizer is None:
             self.initialize()
             
-        model_path = os.path.join(checkpoint_dir, "model.safetensors")
-        opt_path = os.path.join(checkpoint_dir, "optimizer.pt")
+        from pathlib import Path
+        ckpt_path = Path(checkpoint_dir)
+        model_path = ckpt_path / "model.safetensors"
+        opt_path = ckpt_path / "optimizer.pt"
         
-        if os.path.exists(model_path):
-            state_dict = load_file(model_path)
+        if model_path.exists():
+            state_dict = load_file(str(model_path))
             self.model.load_state_dict(state_dict)
             
-        if os.path.exists(opt_path):
+        if opt_path.exists():
             # weights_only=False may be needed for optimizer state if it uses custom classes, but dicts should be fine
-            opt_state = torch.load(opt_path, weights_only=False)
+            opt_state = torch.load(str(opt_path), weights_only=False)
             self.optimizer.load_state_dict(opt_state["optimizer"])
             self.step = opt_state.get("step", 0)
 
@@ -102,12 +104,14 @@ class FoldGemmaTrainer:
         if self.model is None or self.optimizer is None:
             raise RuntimeError("Cannot save checkpoint before initialization.")
             
-        os.makedirs(checkpoint_dir, exist_ok=True)
-        model_path = os.path.join(checkpoint_dir, "model.safetensors")
-        opt_path = os.path.join(checkpoint_dir, "optimizer.pt")
+        from pathlib import Path
+        ckpt_path = Path(checkpoint_dir)
+        ckpt_path.mkdir(parents=True, exist_ok=True)
+        model_path = ckpt_path / "model.safetensors"
+        opt_path = ckpt_path / "optimizer.pt"
         
-        save_file(self.model.state_dict(), model_path)
-        torch.save({"optimizer": self.optimizer.state_dict(), "step": self.step}, opt_path)
+        save_file(self.model.state_dict(), str(model_path))
+        torch.save({"optimizer": self.optimizer.state_dict(), "step": self.step}, str(opt_path))
 
     def fit(
         self,

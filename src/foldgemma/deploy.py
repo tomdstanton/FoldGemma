@@ -18,7 +18,10 @@ def deploy_to_huggingface(repo_id: str, model_path: str, token: str = None) -> N
     if not token:
         raise ValueError("HF_TOKEN environment variable or token argument must be provided.")
         
-    if not os.path.exists(model_path):
+    from pathlib import Path
+    model_path_obj = Path(model_path)
+    
+    if not model_path_obj.exists():
         raise FileNotFoundError(f"Model file {model_path} does not exist.")
 
     api = HfApi(token=token)
@@ -29,7 +32,7 @@ def deploy_to_huggingface(repo_id: str, model_path: str, token: str = None) -> N
     logger.info(f"Uploading {model_path} to {repo_id}...")
     api.upload_file(
         path_or_fileobj=model_path,
-        path_in_repo=os.path.basename(model_path),
+        path_in_repo=model_path_obj.name,
         repo_id=repo_id,
         commit_message="Deploy FoldGemma model safetensors",
     )

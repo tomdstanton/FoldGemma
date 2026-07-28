@@ -114,12 +114,14 @@ class BaseTFRecordDataset(IterableDataset, ABC):
         pass
 
     def __iter__(self) -> Iterator[int]:
+        from pathlib import Path
         worker_info = torch.utils.data.get_worker_info()
         worker_id = worker_info.id if worker_info is not None else 0
         num_workers = worker_info.num_workers if worker_info is not None else 1
 
-        os.makedirs(self.out_dir, exist_ok=True)
-        shard_path = os.path.join(self.out_dir, f"afdb_train_shard_{worker_id:05d}.tfrecord")
+        out_path = Path(self.out_dir)
+        out_path.mkdir(parents=True, exist_ok=True)
+        shard_path = str(out_path / f"afdb_train_shard_{worker_id:05d}.tfrecord")
         
         writer = tf.io.TFRecordWriter(shard_path)
         try:
