@@ -177,38 +177,42 @@ class FoldseekDataset(BaseTFRecordDataset):
         self.db_prefix = db_prefix
 
     def generate_records(self, worker_id: int, num_workers: int) -> Iterator[Tuple[bytes, bytes, np.ndarray]]:
+        # In Foldseek, db_prefix (e.g. afdb50) is the amino acid sequence DB
+        # db_prefix + "_ss" is the 3Di sequence DB
+        aa_path = self.db_prefix
         ss_path = f"{self.db_prefix}_ss"
-        ca_path = f"{self.db_prefix}_ca"
+        aa_index_path = f"{self.db_prefix}.index"
         ss_index_path = f"{self.db_prefix}_ss.index"
-        ca_index_path = f"{self.db_prefix}_ca.index"
 
-        with open(ss_path, "rb") as f_ss, open(ca_path, "rb") as f_ca:
+        with open(aa_path, "rb") as f_aa, open(ss_path, "rb") as f_ss:
+            mm_aa = mmap.mmap(f_aa.fileno(), 0, access=mmap.ACCESS_READ)
             mm_ss = mmap.mmap(f_ss.fileno(), 0, access=mmap.ACCESS_READ)
-            mm_ca = mmap.mmap(f_ca.fileno(), 0, access=mmap.ACCESS_READ)
 
-            with open(ss_index_path, "r", encoding="ascii") as f_ss_idx, \
-                 open(ca_index_path, "r", encoding="ascii") as f_ca_idx:
+            with open(aa_index_path, "r", encoding="ascii") as f_aa_idx, \
+                 open(ss_index_path, "r", encoding="ascii") as f_ss_idx:
                 
-                for i, (line_ss, line_ca) in enumerate(zip(f_ss_idx, f_ca_idx)):
+                for i, (line_aa, line_ss) in enumerate(zip(f_aa_idx, f_ss_idx)):
                     if i % num_workers != worker_id:
                         continue
                         
+                    key_aa, offset_aa_str, length_aa_str = line_aa.strip().split("\t")
                     key_ss, offset_ss_str, length_ss_str = line_ss.strip().split("\t")
-                    key_ca, offset_ca_str, length_ca_str = line_ca.strip().split("\t")
                     
-                    if key_ss != key_ca:
+                    if key_aa != key_ss:
                         continue
                         
+                    offset_aa, length_aa = int(offset_aa_str), int(length_aa_str)
                     offset_ss, length_ss = int(offset_ss_str), int(length_ss_str)
-                    offset_ca, length_ca = int(offset_ca_str), int(length_ca_str)
                     
+                    # Strip trailing null bytes and newlines
+                    aa_bytes = mm_aa[offset_aa:offset_aa+length_aa].strip(b'\x00\n')
                     ss_bytes = mm_ss[offset_ss:offset_ss+length_ss].strip(b'\x00\n')
                     
-                    ca_bytes = mm_ca[offset_ca:offset_ca+length_ca]
-                    ca_arr = np.frombuffer(ca_bytes, dtype=np.uint8)
-                    aa_arr, plddt_arr = _parse_pdb_bytes(ca_arr)
+                    # Foldseek sequence DBs don't store pLDDT. Synthesize a 100.0 mask 
+                    # so that it passes the standard >=70.0 threshold in FoldGemma's loss function.
+                    plddt_arr = np.full(len(aa_bytes), 100.0, dtype=np.float32)
                     
-                    yield aa_arr.tobytes(), ss_bytes, plddt_arr
+                    yield aa_bytes, ss_bytes, plddt_arr
 
 
 def write_tfrecords_from_foldcomp(tsv_path: str, fcz_path: str, out_dir: str, num_workers: int = 4):
