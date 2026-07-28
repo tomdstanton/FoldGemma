@@ -425,11 +425,12 @@ class Prep(Command):
         opts.add_argument("--db-path", type=str, required=True, help="Path prefix to Foldseek database (e.g. afdb50)")
         opts.add_argument("--out-dir", type=str, required=True, help="Directory to output TFRecords")
         opts.add_argument("--num-workers", type=int, default=4, help="Number of parallel PyTorch DataLoader workers")
+        opts.add_argument("--prefix", type=str, default=None, help="Prefix for the output TFRecord files (defaults to db-path basename)")
         
     def __call__(self, args: argparse.Namespace):
         self.cli.msg(f"🛠️ Initializing PyTorch DataLoader for Foldseek prep...")
         from foldgemma.data.prep import write_tfrecords_from_foldseek
-        total = write_tfrecords_from_foldseek(args.db_path, args.out_dir, args.num_workers)
+        total = write_tfrecords_from_foldseek(args.db_path, args.out_dir, args.num_workers, args.prefix)
         self.cli.msg(f"✅ Data prep complete! Successfully serialized {total} records to TFRecords.")
 
 

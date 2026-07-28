@@ -25,9 +25,10 @@ logger = logging.getLogger(__name__)
 class BaseTFRecordDataset(IterableDataset, ABC):
     """Abstract base dataset for writing TFRecord shards from background workers."""
 
-    def __init__(self, out_dir: str):
+    def __init__(self, out_dir: str, prefix: str):
         super().__init__()
         self.out_dir = out_dir
+        self.prefix = prefix
 
     @abstractmethod
     def generate_records(self, worker_id: int, num_workers: int) -> Iterator[Tuple[bytes, bytes, np.ndarray]]:
@@ -42,7 +43,7 @@ class BaseTFRecordDataset(IterableDataset, ABC):
 
         out_path = Path(self.out_dir)
         out_path.mkdir(parents=True, exist_ok=True)
-        shard_path = str(out_path / f"afdb_train_shard_{worker_id:05d}.tfrecord")
+        shard_path = str(out_path / f"{self.prefix}_shard_{worker_id:05d}.tfrecord")
         
         writer = tf.io.TFRecordWriter(shard_path)
         try:
@@ -67,8 +68,11 @@ class BaseTFRecordDataset(IterableDataset, ABC):
 class FoldseekDataset(BaseTFRecordDataset):
     """ETL Dataset that reads MMseqs2/Foldseek databases directly using mmap."""
 
-    def __init__(self, db_prefix: str, out_dir: str):
-        super().__init__(out_dir)
+    def __init__(self, db_prefix: str, out_dir: str, prefix: str = None):
+        from pathlib import Path
+        if prefix is None:
+            prefix = Path(db_prefix).name
+        super().__init__(out_dir, prefix)
         self.db_prefix = db_prefix
 
     def generate_records(self, worker_id: int, num_workers: int) -> Iterator[Tuple[bytes, bytes, np.ndarray]]:
@@ -113,9 +117,9 @@ class FoldseekDataset(BaseTFRecordDataset):
 
 
 
-def write_tfrecords_from_foldseek(db_prefix: str, out_dir: str, num_workers: int = 4):
+def write_tfrecords_from_foldseek(db_prefix: str, out_dir: str, num_workers: int = 4, prefix: str = None):
     """Executes the Foldseek dataset ETL pipeline."""
-    dataset = FoldseekDataset(db_prefix=db_prefix, out_dir=out_dir)
+    dataset = FoldseekDataset(db_prefix=db_prefix, out_dir=out_dir, prefix=prefix)
     dataloader = torch.utils.data.DataLoader(
         dataset, 
         batch_size=None,
