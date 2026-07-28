@@ -417,9 +417,8 @@ class Infer(Command):
         self.cli.msg("✅ Inference complete.")
 
 
-class PrepFoldseek(Command):
-    name = "foldseek"
-    description = "Prepare data from an MMseqs2/Foldseek database."
+class Prep(Command):
+    """🛠️ Prepare Steinegger Lab AFDB data into TFRecords for training."""
     
     def setup_arguments(self):
         opts = self.parser.add_argument_group("Inputs")
@@ -432,32 +431,6 @@ class PrepFoldseek(Command):
         from foldgemma.data.prep import write_tfrecords_from_foldseek
         total = write_tfrecords_from_foldseek(args.db_path, args.out_dir, args.num_workers)
         self.cli.msg(f"✅ Data prep complete! Successfully serialized {total} records to TFRecords.")
-
-
-class PrepFoldcomp(Command):
-    name = "foldcomp"
-    description = "Prepare data from a Foldcomp FCZ + TSV."
-    
-    def setup_arguments(self):
-        opts = self.parser.add_argument_group("Inputs")
-        opts.add_argument("--tsv", type=str, required=True, help="Path to the 3Di TSV file")
-        opts.add_argument("--fcz", type=str, required=True, help="Path to the Foldcomp database (FCZ)")
-        opts.add_argument("--out-dir", type=str, required=True, help="Directory to output TFRecords")
-        opts.add_argument("--num-workers", type=int, default=4, help="Number of parallel PyTorch DataLoader workers")
-        
-    def __call__(self, args: argparse.Namespace):
-        self.cli.msg(f"🛠️ Initializing PyTorch DataLoader for Foldcomp prep...")
-        from foldgemma.data.prep import write_tfrecords_from_foldcomp
-        total = write_tfrecords_from_foldcomp(args.tsv, args.fcz, args.out_dir, args.num_workers)
-        self.cli.msg(f"✅ Data prep complete! Successfully serialized {total} records to TFRecords.")
-
-
-class Prep(Command):
-    """🛠️ Prepare Steinegger Lab AFDB data into TFRecords for training."""
-    
-    def __init__(self):
-        super().__init__()
-        self.subcommands = [PrepFoldseek(), PrepFoldcomp()]
 
 
 class Deploy(Command):

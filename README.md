@@ -54,18 +54,12 @@ foldgemma infer -i proteins.fasta -o structures_3di.fasta --model-type foldgemma
 
 ### Data Preparation (AFDB)
 
-FoldGemma includes a native PyTorch IterableDataset pipeline for high-throughput data extraction. It natively supports raw MMseqs2/Foldseek databases (using highly efficient memory-mapping) as well as Foldcomp FCZ formats, and writes the output directly into TFRecord shards via background workers.
+FoldGemma includes a native PyTorch IterableDataset pipeline for high-throughput data extraction. It natively supports raw MMseqs2/Foldseek databases (using highly efficient memory-mapping) and writes the output directly into TFRecord shards via background workers.
 
-We highly recommend training on the non-redundant **AFDB50** database via the `foldseek` prep subcommand:
-
-```bash
-foldgemma prep foldseek --db-path ./afdb50 --out-dir ./tfrecords --num-workers 16
-```
-
-Alternatively, to extract from a Foldcomp format:
+We highly recommend training on the non-redundant **AFDB50** database via the `prep` command:
 
 ```bash
-foldgemma prep foldcomp --tsv ./afdb241_ss.tsv --fcz ./afdb241_fcz --out-dir ./tfrecords --num-workers 16
+foldgemma prep --db-path ./afdb50 --out-dir ./tfrecords --num-workers 16
 ```
 
 ### Training
