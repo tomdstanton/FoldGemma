@@ -86,14 +86,14 @@ def pad_to_static_bucket(
 
 
 def get_dataset_from_tfrecord(
-    tfrecord_path: str,
+    tfrecord_path: str | Sequence[str],
     vocabulary: Protein3diVocabulary | None = None,
     buckets: Sequence[int] = STATIC_BUCKETS,
 ) -> tf.data.Dataset:
-    """Build a tf.data.Dataset from a TFRecord file with static bucket padding.
+    """Build a tf.data.Dataset from TFRecord file(s) with static bucket padding.
 
     Args:
-        tfrecord_path: Path to TFRecord file.
+        tfrecord_path: Path(s) to TFRecord file(s).
         vocabulary: Protein3diVocabulary instance.
         buckets: Sequence of static length bucket sizes.
 
@@ -164,7 +164,7 @@ class FoldGemmaDataPipeline:
 
     def __init__(
         self,
-        tfrecord_path: str = "dummy.tfrecord",
+        tfrecord_path: str | Sequence[str] = "dummy.tfrecord",
         seqio_mixture: str | None = None,
         buckets: Sequence[int] = STATIC_BUCKETS,
         vocabulary: Protein3diVocabulary | None = None,

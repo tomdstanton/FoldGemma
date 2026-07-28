@@ -272,8 +272,9 @@ class Train(Command):
         opts = self.parser.add_argument_group("Inputs")
         opts.add_argument(
             "tfrecord", 
-            type=Path, 
-            help="Path to the training TFRecord file"
+            type=str, 
+            nargs="+",
+            help="Path(s) or glob pattern to the training TFRecord file(s)"
         )
         opts = self.parser.add_argument_group("Hyperparameters")
         opts.add_argument("--epochs", type=int, default=10, help="Number of epochs to train (default: 10)")
@@ -289,9 +290,21 @@ class Train(Command):
         from foldgemma.trainer import FoldGemmaTrainer
         from foldgemma.config import FoldGemmaConfig, ModelType
         from foldgemma.data.pipeline import FoldGemmaDataPipeline
+        import glob
+        
+        tfrecords = []
+        for path_arg in args.tfrecord:
+            if "*" in path_arg or "?" in path_arg:
+                tfrecords.extend(glob.glob(path_arg))
+            else:
+                tfrecords.append(path_arg)
+        tfrecords = sorted(list(set(tfrecords)))
+        
+        if not tfrecords:
+            self.cli.exit(f"No TFRecord files found matching {args.tfrecord}")
         
         pipeline = FoldGemmaDataPipeline(
-            tfrecord_path=str(args.tfrecord),
+            tfrecord_path=tfrecords,
             batch_size=args.batch_size,
         )
         
