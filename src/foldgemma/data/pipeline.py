@@ -100,7 +100,7 @@ def get_dataset_from_tfrecord(
     Returns:
         tf.data.Dataset yielding dicts of padded 'inputs', 'targets', and 'plddt'.
     """
-    dataset = tf.data.TFRecordDataset(tfrecord_path)
+    dataset = tf.data.TFRecordDataset(tfrecord_path, num_parallel_reads=tf.data.AUTOTUNE)
     dataset = dataset.map(deserialize_example, num_parallel_calls=tf.data.AUTOTUNE)
     dataset = dataset.map(
         lambda ex: pad_to_static_bucket(ex, vocabulary=vocabulary, buckets=buckets),
