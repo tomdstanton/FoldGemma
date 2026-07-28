@@ -422,8 +422,8 @@ class Prep(Command):
     
     def setup_arguments(self):
         opts = self.parser.add_argument_group("Inputs")
-        opts.add_argument("--db-path", type=str, required=True, help="Path prefix to Foldseek database (e.g. afdb50)")
-        opts.add_argument("--out-dir", type=str, required=True, help="Directory to output TFRecords")
+        opts.add_argument("db_path", type=str, help="Path prefix to Foldseek database (e.g. afdb50)")
+        opts.add_argument("out_dir", type=str, help="Directory to output TFRecords")
         opts.add_argument("--num-workers", type=int, default=4, help="Number of parallel PyTorch DataLoader workers")
         opts.add_argument("--prefix", type=str, default=None, help="Prefix for the output TFRecord files (defaults to db-path basename)")
         

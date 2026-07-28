@@ -59,7 +59,7 @@ FoldGemma includes a native PyTorch IterableDataset pipeline for high-throughput
 We highly recommend training on the non-redundant **AFDB50** database via the `prep` command:
 
 ```bash
-foldgemma prep --db-path ./afdb50 --out-dir ./tfrecords --num-workers 16
+foldgemma prep ./afdb50 ./tfrecords --num-workers 16
 ```
 
 ### Training
