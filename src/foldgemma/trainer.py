@@ -83,6 +83,9 @@ class FoldGemmaTrainer:
 
         print(f"DEBUG: Moving model to device {self.device}...", file=sys.stderr, flush=True)
         self.model.to(self.device)
+        if self.device.type == "cuda":
+            print("DEBUG: Synchronizing CUDA...", file=sys.stderr, flush=True)
+            torch.cuda.synchronize()
         
         print("DEBUG: Instantiating optimizer...", file=sys.stderr, flush=True)
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.learning_rate)
