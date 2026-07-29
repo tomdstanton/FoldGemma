@@ -70,17 +70,24 @@ class FoldGemmaTrainer:
         if self.model is not None and self.optimizer is not None:
             return
 
+        import sys
+        print("DEBUG: Inside initialize(). Setting seed...", file=sys.stderr, flush=True)
         current_seed = seed if seed is not None else self.seed
         torch.manual_seed(current_seed)
         
+        print("DEBUG: Instantiating model...", file=sys.stderr, flush=True)
         if self.config.model_type == ModelType.FOLDGEMMA_T5:
             self.model = FoldGemmaT5(self.config)
         else:
             self.model = FoldGemma(self.config)
 
+        print(f"DEBUG: Moving model to device {self.device}...", file=sys.stderr, flush=True)
         self.model.to(self.device)
+        
+        print("DEBUG: Instantiating optimizer...", file=sys.stderr, flush=True)
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.learning_rate)
         self.step = 0
+        print("DEBUG: initialize() complete.", file=sys.stderr, flush=True)
 
     def load_checkpoint(self, checkpoint_dir: str) -> None:
         """Load state from a PyTorch checkpoint."""

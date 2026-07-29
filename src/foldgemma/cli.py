@@ -19,6 +19,14 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 try:
+    import torch
+    if torch.cuda.is_available():
+        # Force PyTorch to claim the CUDA runtime symbols before TensorFlow is imported
+        torch.cuda.init()
+except Exception:
+    pass
+
+try:
     import tensorflow as tf
     tf.config.set_visible_devices([], 'GPU')
 except Exception:
