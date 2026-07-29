@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import torch
+
+if TYPE_CHECKING:
+    from foldgemma.data.pipeline import FoldGemmaDataPipeline
 from safetensors.torch import load_file, save_file
 
 from foldgemma.config import FoldGemmaConfig, ModelType
@@ -13,7 +16,7 @@ from foldgemma.models.foldgemma_t5 import FoldGemmaT5
 from foldgemma.loss import MaskedCrossEntropyLoss
 
 try:
-    from foldgemma.data.pipeline import FoldGemmaDataPipeline
+    import tensorflow as tf
     TRAIN_AVAILABLE = True
 except ImportError as e:
     TRAIN_AVAILABLE = False
