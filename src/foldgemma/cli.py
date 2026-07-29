@@ -10,6 +10,23 @@ from typing import IO
 
 
 
+# --- Global GPU Conflict Resolution ---
+# PyTorch and TensorFlow often crash when trying to claim the same GPU CUDA context simultaneously.
+# 1. Force PyTorch to initialize and claim the GPUs (if available).
+try:
+    import torch
+    if torch.cuda.is_available():
+        torch.cuda.init()
+except ImportError:
+    pass
+
+# 2. Tell the environment to hide GPUs.
+# Because PyTorch has already cached the GPU state, it will ignore this.
+# However, when TensorFlow is eventually imported, it will see this and ignore GPUs.
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+# --------------------------------------
+
 # Classes --------------------------------------------------------------------------------------------------------------
 class Colors:
     """A non-instantiable namespace for ANSI escape sequences."""
