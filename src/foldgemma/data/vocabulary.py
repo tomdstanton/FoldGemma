@@ -77,7 +77,7 @@ class Protein3diVocabulary:
         """End of sequence token ID (None if unused)."""
         return None
 
-    def _encode(self, s: str | bytes) -> List[int]:
+    def encode(self, s: str | bytes) -> List[int]:
         """Encode Python string or bytes to token IDs."""
         if isinstance(s, bytes):
             return self.encode_bytes(s)
@@ -87,7 +87,7 @@ class Protein3diVocabulary:
         """Encode bytes to token IDs."""
         return [self._byte_to_id.get(b, UNK_ID) for b in s]
 
-    def _decode(self, ids: Iterable[int]) -> str:
+    def decode(self, ids: Iterable[int]) -> str:
         """Decode token IDs to Python string."""
         return "".join(self._id_to_char.get(int(i), UNK_TOKEN) for i in ids)
 
@@ -95,13 +95,13 @@ class Protein3diVocabulary:
         """Decode token IDs to bytes."""
         return b"".join(self._id_to_byte.get(int(i), b"<unk>") for i in ids)
 
-    def _encode_tf(self, s: tf.Tensor) -> tf.Tensor:
+    def encode_tf(self, s: tf.Tensor) -> tf.Tensor:
         """Encode TensorFlow string Tensor to int32 ID Tensor."""
         chars = tf.strings.bytes_split(s)
         ids = self._tf_char_to_id_table.lookup(chars)
         return tf.cast(ids, tf.int32)
 
-    def _decode_tf(self, ids: tf.Tensor) -> tf.Tensor:
+    def decode_tf(self, ids: tf.Tensor) -> tf.Tensor:
         """Decode TensorFlow int32 ID Tensor to string Tensor."""
         chars = self._tf_id_to_char_table.lookup(tf.cast(ids, tf.int64))
         return tf.strings.reduce_join(chars, axis=-1)
