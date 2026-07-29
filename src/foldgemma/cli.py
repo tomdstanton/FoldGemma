@@ -11,20 +11,18 @@ from typing import IO
 
 
 # --- Global GPU Conflict Resolution ---
-# PyTorch and TensorFlow often crash when trying to claim the same GPU CUDA context simultaneously.
-# 1. Force PyTorch to initialize and claim the GPUs (if available).
-try:
-    import torch
-    if torch.cuda.is_available():
-        torch.cuda.init()
-except ImportError:
-    pass
-
-# 2. Tell the environment to hide GPUs.
-# Because PyTorch has already cached the GPU state, it will ignore this.
-# However, when TensorFlow is eventually imported, it will see this and ignore GPUs.
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# PyTorch and TensorFlow share the same CUDA runtime library (cudart) in the process.
+# We cannot use CUDA_VISIBLE_DEVICES="-1" because if TF initializes it first, PyTorch will never see GPUs.
+# If PyTorch initializes it first, TF will see all GPUs and might crash when attempting to share them.
+# The ONLY safe way is to tell TensorFlow's logical device manager to ignore all physical GPUs.
+import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
+try:
+    import tensorflow as tf
+    tf.config.set_visible_devices([], 'GPU')
+except Exception:
+    pass
 # --------------------------------------
 
 # Classes --------------------------------------------------------------------------------------------------------------
@@ -307,6 +305,7 @@ class Train(Command):
         from foldgemma.trainer import FoldGemmaTrainer
         from foldgemma.config import FoldGemmaConfig, ModelType
         from foldgemma.data.pipeline import FoldGemmaDataPipeline
+        self.cli.msg("DEBUG: Imports complete.")
         import glob
         
         tfrecords = []
@@ -320,11 +319,13 @@ class Train(Command):
         if not tfrecords:
             self.cli.exit(f"No TFRecord files found matching {args.tfrecord}")
         
+        self.cli.msg("DEBUG: Initializing DataPipeline...")
         pipeline = FoldGemmaDataPipeline(
             tfrecord_path=tfrecords,
             batch_size=args.batch_size,
         )
         
+        self.cli.msg("DEBUG: Creating Config...")
         if args.model_size == "small":
             config = FoldGemmaConfig.small(model_type=ModelType(args.model_type))
         elif args.model_size == "base":
@@ -332,12 +333,14 @@ class Train(Command):
         else:
             config = FoldGemmaConfig.large(model_type=ModelType(args.model_type))
 
+        self.cli.msg("DEBUG: Instantiating FoldGemmaTrainer...")
         trainer = FoldGemmaTrainer(
             config=config,
             learning_rate=args.learning_rate,
             model_type=ModelType(args.model_type)
         )
         
+        self.cli.msg("DEBUG: Calling trainer.fit()...")
         trainer.fit(
             pipeline=pipeline,
             epochs=args.epochs,

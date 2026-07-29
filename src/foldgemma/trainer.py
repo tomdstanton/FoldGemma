@@ -128,17 +128,24 @@ class FoldGemmaTrainer:
             self.initialize()
 
         self.model.train()
-        print(f"Starting training for {epochs} epochs...")
+        import sys
+        print(f"Starting training for {epochs} epochs...", file=sys.stderr, flush=True)
+        print("DEBUG: Getting train dataset...", file=sys.stderr, flush=True)
         dataset = pipeline.get_train_dataset()
+        print("DEBUG: Creating iterator...", file=sys.stderr, flush=True)
         iterator = iter(dataset)
 
         for epoch in range(epochs):
-            print(f"Epoch {epoch + 1}/{epochs}")
+            print(f"Epoch {epoch + 1}/{epochs}", file=sys.stderr, flush=True)
             epoch_loss = 0.0
 
             for step in range(steps_per_epoch):
                 try:
+                    if step == 0:
+                        print(f"DEBUG: Fetching first batch...", file=sys.stderr, flush=True)
                     batch_tf = next(iterator)
+                    if step == 0:
+                        print(f"DEBUG: First batch fetched successfully.", file=sys.stderr, flush=True)
                 except StopIteration:
                     iterator = iter(dataset)
                     batch_tf = next(iterator)
