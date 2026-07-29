@@ -2,7 +2,6 @@
 
 from typing import Iterable, List
 
-import seqio
 import tensorflow as tf
 
 # 20 standard amino acid characters
@@ -22,7 +21,7 @@ UNK_ID: int = 1
 VOCAB_SIZE: int = 64
 
 
-class Protein3diVocabulary(seqio.Vocabulary):
+class Protein3diVocabulary:
     """Character-level vocabulary for Protein AA and 3di structural tokens with vocab size 64."""
 
     def __init__(self) -> None:

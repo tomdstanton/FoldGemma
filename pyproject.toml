@@ -33,8 +33,7 @@ dependencies = [
 
 [project.optional-dependencies]
 train = [
-    "seqio",
-    "tensorflow-cpu",
+    "tensorflow-cpu<2.18",
     "numpy",
 ]
 

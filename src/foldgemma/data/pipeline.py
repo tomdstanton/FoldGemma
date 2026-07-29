@@ -5,7 +5,6 @@ Includes TFRecord deserialization, static length bucketing, and SeqIO task confi
 
 from typing import Any, Dict, Sequence, Tuple
 
-import seqio
 import tensorflow as tf
 
 from foldgemma.data.vocabulary import Protein3diVocabulary
@@ -123,44 +122,8 @@ def _dummy_dataset_fn(
     )
 
 
-class _FastProtDataSource(seqio.FunctionDataSource):
-    """Custom FunctionDataSource with non-None num_input_examples for SeqIO protocol."""
-
-    def num_input_examples(self, split: str) -> int:
-        return 1
-
-
-def register_seqio_task(
-    task_name: str = "FoldGemma_task",
-    vocabulary: Protein3diVocabulary | None = None,
-) -> None:
-    """Register SeqIO task for FoldGemma."""
-    if vocabulary is None:
-        vocabulary = Protein3diVocabulary()
-
-    output_features = {
-        "inputs": seqio.Feature(vocabulary=vocabulary, add_eos=False),
-        "targets": seqio.Feature(vocabulary=vocabulary, add_eos=False),
-    }
-
-    if task_name not in seqio.TaskRegistry.names():
-        seqio.TaskRegistry.add(
-            name=task_name,
-            source=_FastProtDataSource(
-                dataset_fn=_dummy_dataset_fn,
-                splits=["train", "validation"],
-                num_input_examples={"train": 1, "validation": 1},
-            ),
-            preprocessors=[
-                seqio.preprocessors.tokenize,
-            ],
-            output_features=output_features,
-            metric_fns=[],
-        )
-
-
 class FoldGemmaDataPipeline:
-    """OOP encapsulation of the SeqIO vocabulary and dataset loading logic."""
+    """OOP encapsulation of the vocabulary and dataset loading logic."""
 
     def __init__(
         self,
@@ -188,6 +151,3 @@ class FoldGemmaDataPipeline:
             bucket_batch_sizes=[self.batch_size] * len(self.buckets),
         ).prefetch(tf.data.AUTOTUNE)
 
-    def register_task(self, task_name: str = "FoldGemma_task") -> None:
-        """Register the seqio task for this pipeline."""
-        register_seqio_task(task_name, self.vocabulary)
