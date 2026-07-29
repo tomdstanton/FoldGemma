@@ -34,7 +34,7 @@ class MaskedCrossEntropyLoss(nn.Module):
             Scalar average loss divided ONLY by sum of valid mask.
         """
         vocab_size = logits.size(-1)
-        raw_loss = F.cross_entropy(logits.reshape(-1, vocab_size), targets.reshape(-1), reduction='none')
+        raw_loss = F.cross_entropy(logits.reshape(-1, vocab_size), targets.reshape(-1).long(), reduction='none')
         raw_loss = raw_loss.view(targets.shape)
         
         mask = self.compute_mask(targets, plddt).to(logits.dtype)
