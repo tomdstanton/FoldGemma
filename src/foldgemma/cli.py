@@ -301,11 +301,11 @@ class Train(Command):
         opts.add_argument("--model-size", type=str, default="small", choices=["small", "base", "large"], help="Model size variant")
 
     def __call__(self, args: argparse.Namespace):
-        self.cli.msg(f"🚀 Starting FoldGemma training pipeline...")
+        print("DEBUG: Inside Train.__call__, beginning imports...", flush=True)
         from foldgemma.trainer import FoldGemmaTrainer
         from foldgemma.config import FoldGemmaConfig, ModelType
         from foldgemma.data.pipeline import FoldGemmaDataPipeline
-        self.cli.msg("DEBUG: Imports complete.")
+        print("DEBUG: Imports complete.", flush=True)
         import glob
         
         tfrecords = []
@@ -319,13 +319,13 @@ class Train(Command):
         if not tfrecords:
             self.cli.exit(f"No TFRecord files found matching {args.tfrecord}")
         
-        self.cli.msg("DEBUG: Initializing DataPipeline...")
+        print("DEBUG: Initializing DataPipeline...", flush=True)
         pipeline = FoldGemmaDataPipeline(
             tfrecord_path=tfrecords,
             batch_size=args.batch_size,
         )
         
-        self.cli.msg("DEBUG: Creating Config...")
+        print("DEBUG: Creating Config...", flush=True)
         if args.model_size == "small":
             config = FoldGemmaConfig.small(model_type=ModelType(args.model_type))
         elif args.model_size == "base":
@@ -333,14 +333,14 @@ class Train(Command):
         else:
             config = FoldGemmaConfig.large(model_type=ModelType(args.model_type))
 
-        self.cli.msg("DEBUG: Instantiating FoldGemmaTrainer...")
+        print("DEBUG: Instantiating FoldGemmaTrainer...", flush=True)
         trainer = FoldGemmaTrainer(
             config=config,
             learning_rate=args.learning_rate,
             model_type=ModelType(args.model_type)
         )
         
-        self.cli.msg("DEBUG: Calling trainer.fit()...")
+        print("DEBUG: Calling trainer.fit()...", flush=True)
         trainer.fit(
             pipeline=pipeline,
             epochs=args.epochs,
