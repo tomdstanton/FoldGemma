@@ -5,8 +5,23 @@ from enum import Enum
 class ModelType(str, Enum):
     """Model architecture variants for FoldGemma."""
 
-    FOLDGEMMA = "foldgemma"
-    FOLDGEMMA_T5 = "foldgemma_t5"
+    GEMMA = "gemma"
+    T5GEMMA = "t5gemma"
+
+
+class ModelSize(str, Enum):
+    """Model size variants for FoldGemma."""
+
+    SMALL = "small"
+    BASE = "base"
+    LARGE = "large"
+
+
+class OutputFormat(str, Enum):
+    """Output format for inference."""
+    
+    FASTA = "fasta"
+    JSONL = "jsonl"
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,14 +37,14 @@ class FoldGemmaConfig:
     head_dim: int = 32
     rms_norm_eps: float = 1e-6
     rope_theta: float = 10000.0
-    model_type: ModelType = ModelType.FOLDGEMMA
+    model_type: ModelType = ModelType.GEMMA
 
     def __post_init__(self) -> None:
         if isinstance(self.model_type, str) and not isinstance(self.model_type, ModelType):
             object.__setattr__(self, "model_type", ModelType(self.model_type))
 
     @classmethod
-    def small(cls, model_type: ModelType = ModelType.FOLDGEMMA) -> "FoldGemmaConfig":
+    def small(cls, model_type: ModelType = ModelType.GEMMA) -> "FoldGemmaConfig":
         """Small variant (Default): ~10M parameters. Perfect for rapid prototyping."""
         return cls(
             hidden_size=256,
@@ -41,7 +56,7 @@ class FoldGemmaConfig:
         )
 
     @classmethod
-    def base(cls, model_type: ModelType = ModelType.FOLDGEMMA) -> "FoldGemmaConfig":
+    def base(cls, model_type: ModelType = ModelType.GEMMA) -> "FoldGemmaConfig":
         """Base variant: ~100M parameters. Standard for high-quality mappings."""
         return cls(
             hidden_size=768,
@@ -53,7 +68,7 @@ class FoldGemmaConfig:
         )
 
     @classmethod
-    def large(cls, model_type: ModelType = ModelType.FOLDGEMMA) -> "FoldGemmaConfig":
+    def large(cls, model_type: ModelType = ModelType.GEMMA) -> "FoldGemmaConfig":
         """Large variant: ~350M parameters. For state-of-the-art accuracy."""
         return cls(
             hidden_size=1024,

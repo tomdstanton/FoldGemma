@@ -1,7 +1,7 @@
 """Adversarial stress test suite for FoldGemma refactor (m5).
 
-Tests all 4 model instantiations (Flax FoldGemma, Flax FoldGemmaT5, PyTorch
-FoldGemma, PyTorch FoldGemmaT5) and high-level API wrappers
+Tests all 4 model instantiations (Flax FoldGemma, Flax FoldT5Gemma, PyTorch
+FoldGemma, PyTorch FoldT5Gemma) and high-level API wrappers
 (FoldGemmaTrainer, FoldGemmaInference) under edge-cases, extreme bounds,
 custom generation parameters, and dynamic configurations.
 """
@@ -15,7 +15,7 @@ import torch
 from foldgemma.trainer import FoldGemmaTrainer
 from foldgemma.config import FoldGemmaConfig, ModelType
 from foldgemma.models.foldgemma import FoldGemma
-from foldgemma.models.foldgemma_t5 import FoldGemmaT5
+from foldgemma.models.fold_t5gemma import FoldT5Gemma
 
 # ============================================================================
 # Section 1: Direct Model Instantiations & Corner Cases (Batch Size, Seq Len, pLDDT)
@@ -23,30 +23,30 @@ from foldgemma.models.foldgemma_t5 import FoldGemmaT5
 
 def test_trainer_dynamic_instantiation() -> None:
     """Test FoldGemmaTrainer dynamic instantiation via Enum, string, and config override."""
-    config = FoldGemmaConfig(model_type=ModelType.FOLDGEMMA)
+    config = FoldGemmaConfig(model_type=ModelType.GEMMA)
 
-    # Case A: Instantiation with string "foldgemma_t5" overriding config
-    trainer_t5 = FoldGemmaTrainer(config, model_type="foldgemma_t5")
+    # Case A: Instantiation with string "t5gemma" overriding config
+    trainer_t5 = FoldGemmaTrainer(config, model_type="t5gemma")
     trainer_t5.initialize(0)
-    assert isinstance(trainer_t5.model, FoldGemmaT5)
-    assert trainer_t5.config.model_type == ModelType.FOLDGEMMA_T5
+    assert isinstance(trainer_t5.model, FoldT5Gemma)
+    assert trainer_t5.config.model_type == ModelType.T5GEMMA
 
     # Case B: Instantiation with ModelType enum
-    trainer_fg = FoldGemmaTrainer(config, model_type=ModelType.FOLDGEMMA)
+    trainer_fg = FoldGemmaTrainer(config, model_type=ModelType.GEMMA)
     trainer_fg.initialize(0)
     assert isinstance(trainer_fg.model, FoldGemma)
-    assert trainer_fg.config.model_type == ModelType.FOLDGEMMA
+    assert trainer_fg.config.model_type == ModelType.GEMMA
 
     # Case C: Instantiation with default config model_type
-    t5_config = FoldGemmaConfig(model_type=ModelType.FOLDGEMMA_T5)
+    t5_config = FoldGemmaConfig(model_type=ModelType.T5GEMMA)
     trainer_default_t5 = FoldGemmaTrainer(t5_config)
     trainer_default_t5.initialize(0)
-    assert isinstance(trainer_default_t5.model, FoldGemmaT5)
+    assert isinstance(trainer_default_t5.model, FoldT5Gemma)
 
 
 def test_all_masked_out_plddt_propagation() -> None:
     """Test that when pLDDT is all < threshold, model produces clean valid representations."""
-    config = FoldGemmaConfig(model_type=ModelType.FOLDGEMMA)
+    config = FoldGemmaConfig(model_type=ModelType.GEMMA)
     
     # PyTorch
     torch_model = FoldGemma(config)

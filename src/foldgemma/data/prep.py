@@ -1,29 +1,25 @@
 """Data preparation and ETL pipeline for FoldGemma.
 
-Provides a PyTorch IterableDataset for parsing Foldcomp databases and writing TFRecords directly from workers.
+Provides a PyTorch IterableDataset for parsing Foldcomp databases and writing binary SoA directly from workers.
 """
 
 import logging
-import os
 import mmap
-from typing import Iterator, Tuple
 from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import Iterator, Tuple
 
 import numpy as np
-import tensorflow as tf
 import torch
 from torch.utils.data import IterableDataset
 
-from foldgemma.data.generate_synthetic import serialize_example
 from foldgemma.data.vocabulary import AMINO_ACIDS
 
 logger = logging.getLogger(__name__)
 
 
-
-
-class BaseTFRecordDataset(IterableDataset, ABC):
-    """Abstract base dataset for writing TFRecord shards from background workers."""
+class BaseBinaryDataset(IterableDataset, ABC):
+    """Abstract base dataset for writing binary SoA shards from background workers."""
 
     def __init__(self, out_dir: str, prefix: str):
         super().__init__()
@@ -36,17 +32,21 @@ class BaseTFRecordDataset(IterableDataset, ABC):
         pass
 
     def __iter__(self) -> Iterator[int]:
-        from pathlib import Path
         worker_info = torch.utils.data.get_worker_info()
         worker_id = worker_info.id if worker_info is not None else 0
         num_workers = worker_info.num_workers if worker_info is not None else 1
 
-        out_path = Path(self.out_dir)
+        out_path = Path(self.out_dir) / f"{self.prefix}_shard_{worker_id:05d}"
         out_path.mkdir(parents=True, exist_ok=True)
-        shard_path = str(out_path / f"{self.prefix}_shard_{worker_id:05d}.tfrecord")
         
-        writer = tf.io.TFRecordWriter(shard_path)
-        try:
+        offsets = []
+        lengths = []
+        current_offset = 0
+
+        with open(out_path / "inputs.bin", "wb") as f_in, \
+             open(out_path / "targets.bin", "wb") as f_tgt, \
+             open(out_path / "plddt.bin", "wb") as f_plddt:
+             
             for inputs_aa, targets_3di, plddt_array in self.generate_records(worker_id, num_workers):
                 if len(inputs_aa) != len(targets_3di) or len(inputs_aa) != len(plddt_array):
                     logger.warning(
@@ -55,21 +55,29 @@ class BaseTFRecordDataset(IterableDataset, ABC):
                     )
                     continue
 
-                serialized = serialize_example(inputs_aa, targets_3di, plddt_array)
-                writer.write(serialized)
+                f_in.write(inputs_aa)
+                f_tgt.write(targets_3di)
+                f_plddt.write(plddt_array.tobytes())
+                
+                offsets.append(current_offset)
+                lengths.append(len(inputs_aa))
+                current_offset += len(inputs_aa)
+                
                 yield 1
-        finally:
-            writer.close()
+
+        # Save indices
+        if lengths:
+            np.savez_compressed(
+                out_path / "index.npz",
+                offsets=np.array(offsets, dtype=np.int64),
+                lengths=np.array(lengths, dtype=np.int32),
+            )
 
 
-
-
-
-class FoldseekDataset(BaseTFRecordDataset):
+class FoldseekDataset(BaseBinaryDataset):
     """ETL Dataset that reads MMseqs2/Foldseek databases directly using mmap."""
 
-    def __init__(self, db_prefix: str, out_dir: str, prefix: str = None):
-        from pathlib import Path
+    def __init__(self, db_prefix: str, out_dir: str, prefix: str | None = None):
         if prefix is None:
             prefix = Path(db_prefix).name
         super().__init__(out_dir, prefix)
@@ -114,11 +122,8 @@ class FoldseekDataset(BaseTFRecordDataset):
                     yield aa_bytes, ss_bytes, plddt_arr
 
 
-
-
-
-def write_tfrecords_from_foldseek(db_prefix: str, out_dir: str, num_workers: int = 4, prefix: str = None, progress_callback=None):
-    """Executes the Foldseek dataset ETL pipeline."""
+def write_dataset_from_foldseek(db_prefix: str, out_dir: str, num_workers: int = 4, prefix: str | None = None, progress_callback=None):
+    """Executes the Foldseek dataset ETL pipeline to binary shards."""
     dataset = FoldseekDataset(db_prefix=db_prefix, out_dir=out_dir, prefix=prefix)
     dataloader = torch.utils.data.DataLoader(
         dataset, 
@@ -132,3 +137,4 @@ def write_tfrecords_from_foldseek(db_prefix: str, out_dir: str, num_workers: int
         if progress_callback:
             progress_callback(count)
     return total
+

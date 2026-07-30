@@ -3,8 +3,8 @@
 from foldgemma.config import FoldGemmaConfig
 from foldgemma.models.base import BaseFoldModel
 from foldgemma.models.foldgemma import FoldGemma
-from foldgemma.models.foldgemma_t5 import (
-    FoldGemmaT5,
+from foldgemma.models.fold_t5gemma import (
+    FoldT5Gemma,
     GemmaCrossAttention,
     GemmaT5DecoderLayer,
 )
@@ -14,7 +14,7 @@ __all__ = [
     "BaseFoldModel",
     "FoldGemma",
     "FoldGemmaConfig",
-    "FoldGemmaT5",
+    "FoldT5Gemma",
     "GemmaCrossAttention",
     "GemmaModel",
     "GemmaT5DecoderLayer",

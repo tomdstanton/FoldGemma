@@ -14,7 +14,7 @@ Protein structure prediction is a computationally intensive task. While tools li
 
 By formulating structure prediction as a Sequence-to-Sequence (Seq2Seq) problem and running inference on an ultra-fast PyTorch architecture, FoldGemma can "fold" millions of proteins in a fraction of the time, allowing you to instantly search metagenomes using Foldseek.
 
-## Architecture: FoldGemma vs FoldGemmaT5
+## Architecture: FoldGemma vs FoldT5Gemma
 
 FoldGemma provides two distinct architectural variants, optimized for different use cases:
 
@@ -22,7 +22,7 @@ FoldGemma provides two distinct architectural variants, optimized for different 
    - **How it works:** A pure bidirectional encoder network (based on Gemma's transformer blocks) that reads the amino acid sequence and applies a dense classification head. It simultaneously predicts the 3Di token for every residue in a single forward pass.
    - **Best for:** Ultra-fast, high-throughput structural mapping. Because it operates in O(1) time without autoregressive decoding, it is blisteringly fast and perfect for massive database sweeps.
 
-2. **FoldGemmaT5 (Encoder-Decoder Generative)**
+2. **FoldT5Gemma (Encoder-Decoder Generative)**
    - **How it works:** A full sequence-to-sequence T5-style architecture. It uses the same Gemma encoder blocks to read the amino acid sequence, but couples it with causal decoder blocks and cross-attention mechanisms.
    - **Best for:** Complex generative tasks, probabilistic sampling, and autoregressive generation. While slower than the encoder-only variant, the causal decoder provides the architectural capacity for advanced language modeling and sequence generation.
 
@@ -46,28 +46,28 @@ FoldGemma provides a robust CLI for inferencing, training, deploying, and data p
 
 ### Inference
 
-Convert a standard amino acid `.fasta` file into a 3Di `.fasta` file:
+Convert a standard amino acid `.fasta` file into a 3Di `.fasta` file (can optionally use stdin `-` and stdout `-`):
 
 ```bash
-foldgemma infer -i proteins.fasta -o structures_3di.fasta --model-type foldgemma --weights ./model.safetensors
+foldgemma infer proteins.fasta structures_3di.fasta --model-type foldgemma --weights ./model.safetensors
 ```
 
 ### Data Preparation (AFDB)
 
-FoldGemma includes a native PyTorch IterableDataset pipeline for high-throughput data extraction. It natively supports raw MMseqs2/Foldseek databases (using highly efficient memory-mapping) and writes the output directly into TFRecord shards via background workers.
+FoldGemma includes a native PyTorch Dataset pipeline for high-throughput data extraction. It natively supports raw MMseqs2/Foldseek databases and writes the output directly into highly optimized binary Structure-of-Arrays (SoA) shards (using `numpy.memmap`) via parallel PyTorch dataloader workers.
 
 We highly recommend training on the non-redundant **AFDB50** database via the `prep` command:
 
 ```bash
-foldgemma prep ./afdb50 ./tfrecords --num-workers 16
+foldgemma prep ./afdb50 ./binary_dataset --num-workers 16
 ```
 
 ### Training
 
-Start training on your generated TFRecords:
+Start training on your generated binary dataset:
 
 ```bash
-foldgemma train --data-dir ./tfrecords --epochs 10 --model-type foldgemma
+foldgemma train ./binary_dataset --epochs 10 --model-type foldgemma
 ```
 
 ### Deployment
@@ -80,7 +80,7 @@ foldgemma deploy --repo-id <username>/foldgemma --model-path ./model.safetensors
 
 ## API Examples
 
-FoldGemma exposes native PyTorch models (`FoldGemma` for fast classification mappings, and `FoldGemmaT5` for full generative decoder tasks).
+FoldGemma exposes native PyTorch models (`FoldGemma` for fast classification mappings, and `FoldT5Gemma` for full generative decoder tasks).
 
 ### Basic Inference Example
 
@@ -91,7 +91,7 @@ from foldgemma.config import FoldGemmaConfig, ModelType
 from foldgemma.data.vocabulary import Protein3diVocabulary
 
 # 1. Initialize configuration and model
-config = FoldGemmaConfig(model_type=ModelType.FOLDGEMMA)
+config = FoldGemmaConfig(model_type=ModelType.GEMMA)
 model = FoldGemma(config)
 
 # (Optional) Load trained weights

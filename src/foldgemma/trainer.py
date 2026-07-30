@@ -11,20 +11,15 @@ import torch
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from foldgemma.data.pipeline import FoldGemmaDataPipeline
+    from foldgemma.data.dataset import FoldGemmaDataset
 from safetensors.torch import load_file, save_file
 
 from foldgemma.config import FoldGemmaConfig, ModelType
 from foldgemma.models.foldgemma import FoldGemma
-from foldgemma.models.foldgemma_t5 import FoldGemmaT5
+from foldgemma.models.fold_t5gemma import FoldT5Gemma
 from foldgemma.loss import MaskedCrossEntropyLoss
 
-try:
-    import tensorflow as tf
-    TRAIN_AVAILABLE = True
-except ImportError as e:
-    TRAIN_AVAILABLE = False
-    TRAIN_ERROR = e
+
 
 class FoldGemmaTrainer:
     """PyTorch API for training FoldGemma."""
@@ -36,13 +31,6 @@ class FoldGemmaTrainer:
         model_type: ModelType | str | None = None,
         seed: int = 42,
     ):
-        if not TRAIN_AVAILABLE:
-            raise ImportError(
-                "Training dependencies are missing. Please install them using "
-                "`pip install foldgemma[train]` "
-                "or `uv add foldgemma[train]`."
-            ) from TRAIN_ERROR
-
         base_config = config or FoldGemmaConfig()
         if model_type is not None:
             resolved_type = ModelType(model_type) if isinstance(model_type, str) else model_type
@@ -79,8 +67,8 @@ class FoldGemmaTrainer:
         torch.manual_seed(current_seed)
         
         logger.debug("Instantiating model...")
-        if self.config.model_type == ModelType.FOLDGEMMA_T5:
-            self.model = FoldGemmaT5(self.config)
+        if self.config.model_type == ModelType.T5GEMMA:
+            self.model = FoldT5Gemma(self.config)
         else:
             self.model = FoldGemma(self.config)
 
@@ -131,7 +119,8 @@ class FoldGemmaTrainer:
 
     def fit(
         self,
-        pipeline: FoldGemmaDataPipeline,
+        dataset: FoldGemmaDataset,
+        batch_size: int = 32,
         epochs: int = 1,
         steps_per_epoch: int = 10,
         checkpoint_dir: str | None = None,
@@ -145,10 +134,19 @@ class FoldGemmaTrainer:
 
         self.model.train()
         logger.info(f"Starting training for {epochs} epochs...")
-        logger.debug("Getting train dataset...")
-        dataset = pipeline.get_train_dataset()
+        from torch.utils.data import DataLoader
+        from foldgemma.data.dataset import DataCollatorForFoldGemma
+        
+        loader = DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            collate_fn=DataCollatorForFoldGemma(dataset.vocabulary),
+            num_workers=2,
+            pin_memory=True
+        )
         logger.debug("Creating iterator...")
-        iterator = iter(dataset)
+        iterator = iter(loader)
 
         for epoch in range(epochs):
             if on_epoch_start:
@@ -159,31 +157,30 @@ class FoldGemmaTrainer:
                 try:
                     if step == 0:
                         logger.debug("Fetching first batch...")
-                    batch_tf = next(iterator)
+                    batch = next(iterator)
                     if step == 0:
                         logger.debug("First batch fetched successfully.")
                 except StopIteration:
-                    iterator = iter(dataset)
-                    batch_tf = next(iterator)
+                    iterator = iter(loader)
+                    batch = next(iterator)
 
-                # Convert tf.Tensor to numpy arrays, then to torch on device
-                inputs = torch.tensor(batch_tf["inputs"].numpy(), device=self.device)
-                targets = torch.tensor(batch_tf["targets"].numpy(), device=self.device)
-                plddt = torch.tensor(batch_tf["plddt"].numpy(), device=self.device)
+                inputs = batch["input_ids"].to(self.device, non_blocking=True)
+                targets = batch["target_ids"].to(self.device, non_blocking=True)
+                plddt = batch["plddt"].to(self.device, non_blocking=True)
                 
                 self.optimizer.zero_grad()
                 
                 with torch.autocast(
                     device_type=self.device.type, dtype=torch.bfloat16
                 ) if self.device.type != "mps" else torch.autocast(device_type="cpu", enabled=False):
-                    if self.config.model_type == ModelType.FOLDGEMMA_T5:
+                    if self.config.model_type == ModelType.T5GEMMA:
                         logits = self.model(input_ids=inputs, decoder_input_ids=targets)
                     else:
                         logits = self.model(input_ids=inputs)
                         
                     loss_fn = MaskedCrossEntropyLoss(
-                        pad_id=pipeline.vocabulary.pad_id,
-                        unk_id=pipeline.vocabulary.unk_id,
+                        pad_id=dataset.vocabulary.pad_id,
+                        unk_id=dataset.vocabulary.unk_id,
                         plddt_threshold=70.0
                     )
                     

@@ -177,16 +177,16 @@ def __getattr__(name: str):
         from foldgemma.models.foldgemma import FoldGemma
 
         return FoldGemma
-    if name == "FoldGemmaT5":
-        from foldgemma.models.foldgemma_t5 import FoldGemmaT5
+    if name == "FoldT5Gemma":
+        from foldgemma.models.fold_t5gemma import FoldT5Gemma
 
-        return FoldGemmaT5
+        return FoldT5Gemma
     if name == "GemmaCrossAttention":
-        from foldgemma.models.foldgemma_t5 import GemmaCrossAttention
+        from foldgemma.models.fold_t5gemma import GemmaCrossAttention
 
         return GemmaCrossAttention
     if name == "GemmaT5DecoderLayer":
-        from foldgemma.models.foldgemma_t5 import GemmaT5DecoderLayer
+        from foldgemma.models.fold_t5gemma import GemmaT5DecoderLayer
 
         return GemmaT5DecoderLayer
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

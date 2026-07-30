@@ -1,4 +1,4 @@
-"""PyTorch implementation of FoldGemmaT5 sequence-to-sequence model."""
+"""PyTorch implementation of FoldT5Gemma sequence-to-sequence model."""
 
 import math
 
@@ -112,8 +112,8 @@ class GemmaT5DecoderLayer(nn.Module):
         return hidden_states
 
 
-class FoldGemmaT5(BaseFoldModel):
-    """FoldGemmaT5 encoder-decoder model with cross-attention and autoregressive generation."""
+class FoldT5Gemma(BaseFoldModel):
+    """FoldT5Gemma encoder-decoder model with cross-attention and autoregressive generation."""
 
     def __init__(self, config: FoldGemmaConfig) -> None:
         super().__init__(config)

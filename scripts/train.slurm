@@ -20,9 +20,9 @@ cd /scratch/$USER/FoldGemma
 # 2. Run the training via the CLI
 # Note: Because you used `uv sync`, `uv run` handles the virtualenv automatically.
 uv run foldgemma train \
-    --tfrecord-dir /scratch/$USER/datasets/afdb_tfrecords \
-    --output-dir /scratch/$USER/FoldGemma/checkpoints \
-    --model-type foldgemma \
+    /scratch/$USER/datasets/afdb_binary \
+    --checkpoint-dir /scratch/$USER/FoldGemma/checkpoints \
+    --model-type gemma \
     --batch-size 32 \
     --learning-rate 3e-4 \
     --epochs 10

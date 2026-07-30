@@ -1,8 +1,8 @@
 """Deep dive bug identification and verification tests for FoldGemma.
 
 Probes subtle edge cases:
-1. Flax FoldGemmaT5 unused eos_token_id parameter in generate()
-2. Torch FoldGemmaT5 batch-all early stopping logic for eos_token_id
+1. Flax FoldT5Gemma unused eos_token_id parameter in generate()
+2. Torch FoldT5Gemma batch-all early stopping logic for eos_token_id
 3. None / missing plddt in train_step / compute_masked_loss
 4. Invalid model_type string handling in FoldGemmaTrainer & FoldGemmaInference
 5. pLDDT shape mismatch with input_ids
@@ -15,17 +15,17 @@ import torch
 from foldgemma.trainer import FoldGemmaTrainer
 from foldgemma.config import FoldGemmaConfig, ModelType
 from foldgemma.models.foldgemma import FoldGemma
-from foldgemma.models.foldgemma_t5 import FoldGemmaT5
+from foldgemma.models.fold_t5gemma import FoldT5Gemma
 from foldgemma.models.foldgemma import FoldGemma as FoldGemma
-from foldgemma.models.foldgemma_t5 import FoldGemmaT5 as FoldGemmaT5
+from foldgemma.models.fold_t5gemma import FoldT5Gemma as FoldT5Gemma
 
 
 
 
 def test_t5_eos_token_batch_all_requirement() -> None:
-    """Verify Torch FoldGemmaT5.generate requires ALL batch sequences to produce EOS."""
-    config = FoldGemmaConfig(model_type=ModelType.FOLDGEMMA_T5)
-    model = FoldGemmaT5(config)
+    """Verify Torch FoldT5Gemma.generate requires ALL batch sequences to produce EOS."""
+    config = FoldGemmaConfig(model_type=ModelType.T5GEMMA)
+    model = FoldT5Gemma(config)
     model.eval()
 
     batch_size = 2
@@ -53,7 +53,7 @@ def test_invalid_model_type_str_handling() -> None:
 
 def test_plddt_shape_mismatch_torch() -> None:
     """Test behavior when plddt shape does not match input_ids shape in PyTorch."""
-    config = FoldGemmaConfig(model_type=ModelType.FOLDGEMMA)
+    config = FoldGemmaConfig(model_type=ModelType.GEMMA)
     model = FoldGemma(config)
     model.eval()
 

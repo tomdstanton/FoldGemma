@@ -1,10 +1,10 @@
 """Synthetic dummy protein data generator for FoldGemma."""
 
 import random
+from pathlib import Path
 from typing import Sequence, Tuple
 
 import numpy as np
-import tensorflow as tf
 
 from foldgemma.data.vocabulary import AMINO_ACIDS, THREE_DI_TOKENS
 
@@ -35,31 +35,17 @@ def generate_synthetic_protein(
     return inputs_aa, targets_3di, plddt
 
 
-def serialize_example(inputs: str | bytes, targets: str | bytes, plddt: Sequence[float] | np.ndarray) -> bytes:
-    """Serialize inputs, targets, and plddt array into a TFRecord Example binary string."""
-    in_bytes = inputs if isinstance(inputs, bytes) else inputs.encode("utf-8")
-    tgt_bytes = targets if isinstance(targets, bytes) else targets.encode("utf-8")
-    
-    feature = {
-        "inputs": tf.train.Feature(bytes_list=tf.train.BytesList(value=[in_bytes])),
-        "targets": tf.train.Feature(bytes_list=tf.train.BytesList(value=[tgt_bytes])),
-        "plddt": tf.train.Feature(float_list=tf.train.FloatList(value=list(plddt))),
-    }
-    example_proto = tf.train.Example(features=tf.train.Features(feature=feature))
-    return example_proto.SerializeToString()
-
-
-def write_synthetic_tfrecord(
-    output_path: str,
+def write_synthetic_dataset(
+    output_dir: str | Path,
     num_examples: int = 10,
     min_len: int = 100,
     max_len: int = 1500,
     seed: int = 42,
 ) -> None:
-    """Generate synthetic dataset and write to a TFRecord file.
+    """Generate synthetic dataset and write to binary SoA format.
 
     Args:
-        output_path: Output TFRecord file path.
+        output_dir: Output directory for binary files.
         num_examples: Number of protein samples to generate.
         min_len: Minimum sequence length.
         max_len: Maximum sequence length.
@@ -68,22 +54,45 @@ def write_synthetic_tfrecord(
     random.seed(seed)
     np.random.seed(seed)
 
-    writer = tf.io.TFRecordWriter(output_path)
-    try:
+    out_path = Path(output_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+
+    offsets = []
+    lengths = []
+    current_offset = 0
+
+    with open(out_path / "inputs.bin", "wb") as f_in, \
+         open(out_path / "targets.bin", "wb") as f_tgt, \
+         open(out_path / "plddt.bin", "wb") as f_plddt:
+        
         for i in range(num_examples):
             length = random.randint(min_len, max_len)
             inputs, targets, plddt = generate_synthetic_protein(length, seed=seed + i)
-            serialized = serialize_example(inputs, targets, plddt)
-            writer.write(serialized)
-    finally:
-        writer.close()
+            
+            in_bytes = inputs.encode("ascii")
+            tgt_bytes = targets.encode("ascii")
+            
+            f_in.write(in_bytes)
+            f_tgt.write(tgt_bytes)
+            f_plddt.write(plddt.tobytes())
+            
+            offsets.append(current_offset)
+            lengths.append(length)
+            current_offset += length
+
+    # Save indices
+    np.savez_compressed(
+        out_path / "index.npz",
+        offsets=np.array(offsets, dtype=np.int64),
+        lengths=np.array(lengths, dtype=np.int32),
+    )
 
 
 def main() -> None:
     """Run synthetic data generation CLI."""
-    output_file = "synthetic_data.tfrecord"
-    write_synthetic_tfrecord(output_file, num_examples=20, min_len=100, max_len=1000, seed=42)
-    print(f"Generated synthetic dataset written to {output_file}")
+    output_dir = "synthetic_data"
+    write_synthetic_dataset(output_dir, num_examples=20, min_len=100, max_len=1000, seed=42)
+    print(f"Generated synthetic dataset written to {output_dir}")
 
 
 if __name__ == "__main__":

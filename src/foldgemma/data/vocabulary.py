@@ -2,7 +2,7 @@
 
 from typing import Iterable, List
 
-import tensorflow as tf
+import typing
 
 # 20 standard amino acid characters
 AMINO_ACIDS: List[str] = list("ARNDCEGHILKMFPSTWYV")
@@ -37,20 +37,6 @@ class Protein3diVocabulary:
         self._char_to_id: dict[str, int] = {token: i for i, token in enumerate(self._tokens)}
         self._id_to_char: dict[int, str] = {i: token for i, token in enumerate(self._tokens)}
 
-        # Create TensorFlow lookup tables for tf graph mode
-        keys = tf.constant(list(self._char_to_id.keys()))
-        values = tf.constant(list(self._char_to_id.values()), dtype=tf.int64)
-        self._tf_char_to_id_table = tf.lookup.StaticHashTable(
-            tf.lookup.KeyValueTensorInitializer(keys, values),
-            default_value=tf.constant(UNK_ID, dtype=tf.int64),
-        )
-
-        inv_keys = tf.constant(list(self._id_to_char.keys()), dtype=tf.int64)
-        inv_values = tf.constant(list(self._id_to_char.values()))
-        self._tf_id_to_char_table = tf.lookup.StaticHashTable(
-            tf.lookup.KeyValueTensorInitializer(inv_keys, inv_values),
-            default_value=tf.constant(UNK_TOKEN),
-        )
 
     @property
     def _base_vocab_size(self) -> int:
@@ -95,16 +81,7 @@ class Protein3diVocabulary:
         """Decode token IDs to bytes."""
         return b"".join(self._id_to_byte.get(int(i), b"<unk>") for i in ids)
 
-    def encode_tf(self, s: tf.Tensor) -> tf.Tensor:
-        """Encode TensorFlow string Tensor to int32 ID Tensor."""
-        chars = tf.strings.bytes_split(s)
-        ids = self._tf_char_to_id_table.lookup(chars)
-        return tf.cast(ids, tf.int32)
 
-    def decode_tf(self, ids: tf.Tensor) -> tf.Tensor:
-        """Decode TensorFlow int32 ID Tensor to string Tensor."""
-        chars = self._tf_id_to_char_table.lookup(tf.cast(ids, tf.int64))
-        return tf.strings.reduce_join(chars, axis=-1)
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Protein3diVocabulary) and self.vocab_size == other.vocab_size

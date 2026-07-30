@@ -129,12 +129,12 @@ def test_foldgemma_forward() -> None:
     assert not torch.isinf(logits).any()
 
 
-def test_foldgemma_t5_forward_and_generate() -> None:
-    """Verify PyTorch FoldGemmaT5 forward pass and autoregressive generate execution."""
-    from foldgemma.models.foldgemma_t5 import FoldGemmaT5
+def test_fold_t5gemma_forward_and_generate() -> None:
+    """Verify PyTorch FoldT5Gemma forward pass and autoregressive generate execution."""
+    from foldgemma.models.fold_t5gemma import FoldT5Gemma
 
     config = FoldGemmaConfig()
-    model = FoldGemmaT5(config)
+    model = FoldT5Gemma(config)
     model.eval()
 
     batch_size, enc_len, dec_len = 2, 8, 4
@@ -162,12 +162,12 @@ def test_foldgemma_t5_forward_and_generate() -> None:
     assert not torch.isnan(generated.float()).any()
 
 
-def test_foldgemma_t5_eos_early_stopping() -> None:
-    """Verify early stopping on eos_token_id for PyTorch FoldGemmaT5."""
-    from foldgemma.models.foldgemma_t5 import FoldGemmaT5
+def test_fold_t5gemma_eos_early_stopping() -> None:
+    """Verify early stopping on eos_token_id for PyTorch FoldT5Gemma."""
+    from foldgemma.models.fold_t5gemma import FoldT5Gemma
 
     pytorch_config = FoldGemmaConfig()
-    pt_model = FoldGemmaT5(pytorch_config)
+    pt_model = FoldT5Gemma(pytorch_config)
     pt_model.eval()
     input_ids_pt = torch.zeros((2, 4), dtype=torch.long)
     first_gen_pt = pt_model.generate(input_ids_pt, max_new_tokens=1, eos_token_id=None)

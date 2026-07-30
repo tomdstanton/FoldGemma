@@ -2,14 +2,14 @@
 
 from foldgemma.config import FoldGemmaConfig, ModelType
 from foldgemma.models.foldgemma import FoldGemma
-from foldgemma.models.foldgemma_t5 import FoldGemmaT5
+from foldgemma.models.fold_t5gemma import FoldT5Gemma
 from foldgemma.trainer import FoldGemmaTrainer
 
 __all__ = [
     "FoldGemmaConfig",
     "ModelType",
     "FoldGemma",
-    "FoldGemmaT5",
+    "FoldT5Gemma",
     "FoldGemmaTrainer",
 ]
 try:
