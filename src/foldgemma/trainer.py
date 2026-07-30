@@ -2,9 +2,13 @@
 from __future__ import annotations
 
 import os
+import logging
 from typing import Any, TYPE_CHECKING
+from typing import Callable, Optional
 
 import torch
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from foldgemma.data.pipeline import FoldGemmaDataPipeline
@@ -70,27 +74,26 @@ class FoldGemmaTrainer:
         if self.model is not None and self.optimizer is not None:
             return
 
-        import sys
-        print("DEBUG: Inside initialize(). Setting seed...", file=sys.stderr, flush=True)
+        logger.debug("Inside initialize(). Setting seed...")
         current_seed = seed if seed is not None else self.seed
         torch.manual_seed(current_seed)
         
-        print("DEBUG: Instantiating model...", file=sys.stderr, flush=True)
+        logger.debug("Instantiating model...")
         if self.config.model_type == ModelType.FOLDGEMMA_T5:
             self.model = FoldGemmaT5(self.config)
         else:
             self.model = FoldGemma(self.config)
 
-        print(f"DEBUG: Moving model to device {self.device}...", file=sys.stderr, flush=True)
+        logger.debug(f"Moving model to device {self.device}...")
         self.model.to(self.device)
         if self.device.type == "cuda":
-            print("DEBUG: Synchronizing CUDA...", file=sys.stderr, flush=True)
+            logger.debug("Synchronizing CUDA...")
             torch.cuda.synchronize()
         
-        print("DEBUG: Instantiating optimizer...", file=sys.stderr, flush=True)
+        logger.debug("Instantiating optimizer...")
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.learning_rate)
         self.step = 0
-        print("DEBUG: initialize() complete.", file=sys.stderr, flush=True)
+        logger.debug("initialize() complete.")
 
     def load_checkpoint(self, checkpoint_dir: str) -> None:
         """Load state from a PyTorch checkpoint."""
@@ -132,30 +135,33 @@ class FoldGemmaTrainer:
         epochs: int = 1,
         steps_per_epoch: int = 10,
         checkpoint_dir: str | None = None,
+        on_epoch_start: Optional[Callable[[int, int], None]] = None,
+        on_step: Optional[Callable[[int, float], None]] = None,
+        on_epoch_end: Optional[Callable[[int, float], None]] = None,
     ) -> None:
         """Train the model using the provided data pipeline."""
         if self.model is None or self.optimizer is None:
             self.initialize()
 
         self.model.train()
-        import sys
-        print(f"Starting training for {epochs} epochs...", file=sys.stderr, flush=True)
-        print("DEBUG: Getting train dataset...", file=sys.stderr, flush=True)
+        logger.info(f"Starting training for {epochs} epochs...")
+        logger.debug("Getting train dataset...")
         dataset = pipeline.get_train_dataset()
-        print("DEBUG: Creating iterator...", file=sys.stderr, flush=True)
+        logger.debug("Creating iterator...")
         iterator = iter(dataset)
 
         for epoch in range(epochs):
-            print(f"Epoch {epoch + 1}/{epochs}", file=sys.stderr, flush=True)
+            if on_epoch_start:
+                on_epoch_start(epoch, epochs)
             epoch_loss = 0.0
 
             for step in range(steps_per_epoch):
                 try:
                     if step == 0:
-                        print(f"DEBUG: Fetching first batch...", file=sys.stderr, flush=True)
+                        logger.debug("Fetching first batch...")
                     batch_tf = next(iterator)
                     if step == 0:
-                        print(f"DEBUG: First batch fetched successfully.", file=sys.stderr, flush=True)
+                        logger.debug("First batch fetched successfully.")
                 except StopIteration:
                     iterator = iter(dataset)
                     batch_tf = next(iterator)
@@ -194,14 +200,15 @@ class FoldGemmaTrainer:
                 epoch_loss += current_loss
                 self.step += 1
 
-                if (step + 1) % 10 == 0:
-                    print(f"  Step {step + 1}/{steps_per_epoch} - Loss: {current_loss:.4f}")
+                if on_step:
+                    on_step(step + 1, current_loss)
 
             avg_loss = epoch_loss / steps_per_epoch
-            print(f"Epoch {epoch + 1} completed. Avg Loss: {avg_loss:.4f}")
+            if on_epoch_end:
+                on_epoch_end(epoch, avg_loss)
 
         if checkpoint_dir:
             self.save_checkpoint(checkpoint_dir)
-            print(f"Saved checkpoint to {checkpoint_dir}")
+            logger.info(f"Saved checkpoint to {checkpoint_dir}")
 
 

@@ -117,7 +117,7 @@ class FoldseekDataset(BaseTFRecordDataset):
 
 
 
-def write_tfrecords_from_foldseek(db_prefix: str, out_dir: str, num_workers: int = 4, prefix: str = None):
+def write_tfrecords_from_foldseek(db_prefix: str, out_dir: str, num_workers: int = 4, prefix: str = None, progress_callback=None):
     """Executes the Foldseek dataset ETL pipeline."""
     dataset = FoldseekDataset(db_prefix=db_prefix, out_dir=out_dir, prefix=prefix)
     dataloader = torch.utils.data.DataLoader(
@@ -126,4 +126,9 @@ def write_tfrecords_from_foldseek(db_prefix: str, out_dir: str, num_workers: int
         num_workers=num_workers,
         prefetch_factor=2 if num_workers > 0 else None,
     )
-    return sum(count for count in dataloader)
+    total = 0
+    for count in dataloader:
+        total += count
+        if progress_callback:
+            progress_callback(count)
+    return total

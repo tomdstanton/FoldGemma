@@ -26,21 +26,32 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "huggingface-hub>=1.24.0",
-    "safetensors",
-    "torch>=2.0.0",
+    "typer>=0.27.0",
+    "rich>=15.0.0",
 ]
 
 [project.optional-dependencies]
+inference = [
+    "torch>=2.0.0",
+    "safetensors",
+    "huggingface-hub>=1.24.0",
+]
 train = [
-    "tensorflow-cpu<2.18",
+    "foldgemma[inference]",
+    "tensorflow-cpu<2.18; sys_platform != 'darwin' or platform_machine != 'arm64'",
+    "tensorflow-macos<2.18; sys_platform == 'darwin' and platform_machine == 'arm64'",
     "numpy",
+]
+all = [
+    "foldgemma[train]",
 ]
 
 [dependency-groups]
 test = ["foldgemma[train]", "pytest>=8.0.0", "pytest-cov"]
 dev = [
     { include-group = "test" },
+    "biopython>=1.87",
+    "mini3di>=0.2.1",
 ]
 
 [project.urls]
@@ -72,11 +83,18 @@ testpaths = ["tests", "src"]
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
 exclude = [".agents", ".git", ".venv", "__pycache__"]
+target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP"]
+select = ["E", "F", "I", "UP", "D"]
+extend-select = ["ANN", "PYI"]
+preview = true
 
-[tool.ty]
-# Static type checking configuration
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ty.rules]
+missing-type-argument = "error"
+possibly-unresolved-reference = "warn"
+
