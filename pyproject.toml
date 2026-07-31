@@ -49,8 +49,6 @@ all = [
 test = ["foldgemma[train]", "pytest>=8.0.0", "pytest-cov"]
 dev = [
     { include-group = "test" },
-    "biopython>=1.87",
-    "mini3di>=0.2.1",
 ]
 
 [project.urls]
