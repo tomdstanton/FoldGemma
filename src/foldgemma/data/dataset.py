@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -34,44 +35,67 @@ class FoldGemmaDataset(Dataset[dict[str, torch.Tensor]]):
         self.vocabulary = vocabulary or Protein3diVocabulary()
         self.max_length = max_length
 
-        # Load indices
-        self.index = np.load(self.data_dir / "index.npz")
-        self.offsets = self.index["offsets"]
-        self.lengths = self.index["lengths"]
-        self.num_samples = len(self.offsets)
+        # Discover shards (either un-sharded data_dir, or sharded subdirs)
+        index_files = sorted(list(self.data_dir.glob("*/index.npz")) + list(self.data_dir.glob("index.npz")))
+        if not index_files:
+            raise FileNotFoundError(f"No index.npz found in {self.data_dir} or its subdirectories.")
 
-        # Lazy memmaps initialized per-worker
-        self._inputs_mmap = None
-        self._targets_mmap = None
-        self._plddt_mmap = None
+        self.shards: list[dict[str, Any]] = []
+        for idx_file in index_files:
+            shard_dir = idx_file.parent
+            idx_data = np.load(idx_file)
+            self.shards.append(
+                {
+                    "dir": shard_dir,
+                    "offsets": idx_data["offsets"],
+                    "lengths": idx_data["lengths"],
+                    "num_samples": len(idx_data["offsets"]),
+                }
+            )
+
+        self.num_samples = sum(s["num_samples"] for s in self.shards)
+
+        # Build cumulative sums for fast bisect
+        self.cumulative_samples = np.cumsum([s["num_samples"] for s in self.shards])
+
+        # We will initialize mmaps lazily in a dictionary mapping shard_idx -> mmaps
+        self._mmaps: dict[int, dict[str, Any]] = {}
 
     def __len__(self) -> int:
         """Return number of samples."""
         return self.num_samples
 
-    def _init_memmaps(self) -> None:
-        if self._inputs_mmap is None:
-            self._inputs_mmap = np.memmap(self.data_dir / "inputs.bin", dtype="uint8", mode="r")
-            self._targets_mmap = np.memmap(self.data_dir / "targets.bin", dtype="uint8", mode="r")
-            self._plddt_mmap = np.memmap(self.data_dir / "plddt.bin", dtype="float32", mode="r")
+    def _init_shard_mmap(self, shard_idx: int) -> None:
+        if shard_idx not in self._mmaps:
+            shard_dir = self.shards[shard_idx]["dir"]
+            self._mmaps[shard_idx] = {
+                "inputs": np.memmap(shard_dir / "inputs.bin", dtype="uint8", mode="r"),
+                "targets": np.memmap(shard_dir / "targets.bin", dtype="uint8", mode="r"),
+                "plddt": np.memmap(shard_dir / "plddt.bin", dtype="float32", mode="r"),
+            }
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         """Get a single sample by index."""
-        self._init_memmaps()
-        assert self._inputs_mmap is not None
-        assert self._targets_mmap is not None
-        assert self._plddt_mmap is not None
+        shard_idx = int(np.searchsorted(self.cumulative_samples, index, side="right"))
+        if shard_idx > 0:
+            local_index = index - int(self.cumulative_samples[shard_idx - 1])
+        else:
+            local_index = index
 
-        start = self.offsets[index]
-        length = self.lengths[index]
+        self._init_shard_mmap(shard_idx)
+        shard = self.shards[shard_idx]
+        mmaps = self._mmaps[shard_idx]
+
+        start = shard["offsets"][local_index]
+        length = shard["lengths"][local_index]
         end = start + length
 
         # Load raw bytes and convert to strings
-        in_bytes = self._inputs_mmap[start:end].tobytes()
-        tgt_bytes = self._targets_mmap[start:end].tobytes()
+        in_bytes = mmaps["inputs"][start:end].tobytes()
+        tgt_bytes = mmaps["targets"][start:end].tobytes()
 
         # Load pLDDT array (copy to avoid non-writable warnings when converting to Tensor)
-        plddt_arr = self._plddt_mmap[start:end].copy()
+        plddt_arr = mmaps["plddt"][start:end].copy()
 
         inputs_str = in_bytes.decode("ascii")
         targets_str = tgt_bytes.decode("ascii")
