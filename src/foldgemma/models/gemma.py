@@ -36,12 +36,14 @@ class RMSNorm(nn.Module):
     """Root Mean Square Layer Normalization."""
 
     def __init__(self, dim: int, eps: float = 1e-6) -> None:
+        """Initialize RMSNorm."""
         super().__init__()
         self.dim = dim
         self.eps = eps
         self.scale = nn.Parameter(torch.ones(dim))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass."""
         var = torch.mean(x.pow(2), dim=-1, keepdim=True)
         normed = x * torch.rsqrt(var + self.eps)
         return normed * self.scale
@@ -51,6 +53,7 @@ class GemmaMLP(nn.Module):
     """GeGLU MLP block for Gemma."""
 
     def __init__(self, config: FoldGemmaConfig) -> None:
+        """Initialize GemmaMLP."""
         super().__init__()
         self.config = config
         self.gate_proj = nn.Linear(config.hidden_size, config.intermediate_size, bias=False)
@@ -58,6 +61,7 @@ class GemmaMLP(nn.Module):
         self.down_proj = nn.Linear(config.intermediate_size, config.hidden_size, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass."""
         gate = self.gate_proj(x)
         up = self.up_proj(x)
         activated = F.gelu(gate, approximate="tanh") * up
@@ -68,6 +72,7 @@ class GemmaAttention(nn.Module):
     """Grouped Query Attention (GQA) module with RoPE and bidirectional attention."""
 
     def __init__(self, config: FoldGemmaConfig) -> None:
+        """Initialize GemmaAttention."""
         super().__init__()
         self.config = config
         self.num_heads = config.num_attention_heads
@@ -80,15 +85,10 @@ class GemmaAttention(nn.Module):
         self.v_proj = nn.Linear(config.hidden_size, self.num_kv_heads * self.head_dim, bias=False)
         self.o_proj = nn.Linear(self.num_heads * self.head_dim, config.hidden_size, bias=False)
 
-    def _compute_rope(
-        self, seq_len: int, device: torch.device
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def _compute_rope(self, seq_len: int, device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
         inv_freq = 1.0 / (
             self.config.rope_theta
-            ** (
-                torch.arange(0, self.head_dim, device=device, dtype=torch.float32)[::2]
-                / self.head_dim
-            )
+            ** (torch.arange(0, self.head_dim, device=device, dtype=torch.float32)[::2] / self.head_dim)
         )
         pos = torch.arange(seq_len, device=device, dtype=torch.float32)
         freqs = torch.outer(pos, inv_freq)
@@ -96,6 +96,7 @@ class GemmaAttention(nn.Module):
         return torch.cos(emb), torch.sin(emb)
 
     def forward(self, x: torch.Tensor, is_causal: bool = False) -> torch.Tensor:
+        """Forward pass."""
         batch, seq_len, _ = x.shape
         q = self.q_proj(x).view(batch, seq_len, self.num_heads, self.head_dim)
         k = self.k_proj(x).view(batch, seq_len, self.num_kv_heads, self.head_dim)
@@ -118,11 +119,7 @@ class GemmaAttention(nn.Module):
 
         # Attention calculation (causal or bidirectional)
         attn_out = F.scaled_dot_product_attention(q_t, k_t, v_t, is_causal=is_causal)
-        attn_out = (
-            attn_out.transpose(1, 2)
-            .contiguous()
-            .view(batch, seq_len, self.num_heads * self.head_dim)
-        )
+        attn_out = attn_out.transpose(1, 2).contiguous().view(batch, seq_len, self.num_heads * self.head_dim)
         return self.o_proj(attn_out)
 
 
@@ -130,6 +127,7 @@ class GemmaDecoderLayer(nn.Module):
     """Transformer decoder block for Gemma."""
 
     def __init__(self, config: FoldGemmaConfig) -> None:
+        """Initialize GemmaDecoderLayer."""
         super().__init__()
         self.config = config
         self.input_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
@@ -138,6 +136,7 @@ class GemmaDecoderLayer(nn.Module):
         self.mlp = GemmaMLP(config)
 
     def forward(self, x: torch.Tensor, is_causal: bool = False) -> torch.Tensor:
+        """Forward pass."""
         residual = x
         x = residual + self.self_attn(self.input_layernorm(x), is_causal=is_causal)
         residual = x
@@ -149,16 +148,16 @@ class GemmaModel(nn.Module):
     """Gemma Bidirectional Encoder with sequence classification head in PyTorch."""
 
     def __init__(self, config: FoldGemmaConfig) -> None:
+        """Initialize GemmaModel."""
         super().__init__()
         self.config = config
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size)
-        self.layers = nn.ModuleList(
-            [GemmaDecoderLayer(config) for _ in range(config.num_hidden_layers)]
-        )
+        self.layers = nn.ModuleList([GemmaDecoderLayer(config) for _ in range(config.num_hidden_layers)])
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
     def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
+        """Forward pass."""
         x = self.embed_tokens(input_ids) * math.sqrt(self.config.hidden_size)
         for layer in self.layers:
             x = layer(x)
@@ -167,7 +166,7 @@ class GemmaModel(nn.Module):
         return logits
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> object:
     """Dynamic module attribute lookup for backward-compatible re-exports."""
     if name == "BaseFoldModel":
         from foldgemma.models.base import BaseFoldModel

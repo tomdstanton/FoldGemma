@@ -1,10 +1,11 @@
 """Efficient IO module for reading and writing FASTA files in binary mode."""
 
 import sys
-from typing import BinaryIO, Iterable, Tuple
+from collections.abc import Iterable
+from typing import BinaryIO
 
 
-def read_fasta_bytes(file_handle: BinaryIO) -> Iterable[Tuple[bytes, bytes]]:
+def read_fasta_bytes(file_handle: BinaryIO) -> Iterable[tuple[bytes, bytes]]:
     """Yields (header_bytes, sequence_bytes) from a FASTA file efficiently.
 
     Args:
@@ -27,12 +28,12 @@ def read_fasta_bytes(file_handle: BinaryIO) -> Iterable[Tuple[bytes, bytes]]:
             seq_chunks = []
         else:
             seq_chunks.append(line)
-    
+
     if header:
         yield header, b"".join(seq_chunks)
 
 
-def write_fasta_bytes(file_handle: BinaryIO, sequences: Iterable[Tuple[bytes, bytes]]) -> None:
+def write_fasta_bytes(file_handle: BinaryIO, sequences: Iterable[tuple[bytes, bytes]]) -> None:
     """Writes (header, sequence) byte pairs to a FASTA file.
 
     Args:

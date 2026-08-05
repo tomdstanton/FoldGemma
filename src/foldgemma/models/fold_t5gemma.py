@@ -15,6 +15,7 @@ class GemmaCrossAttention(nn.Module):
     """Grouped Query Cross Attention with queries from decoder and keys/values from encoder."""
 
     def __init__(self, config: FoldGemmaConfig) -> None:
+        """Initialize GemmaCrossAttention."""
         super().__init__()
         self.config = config
         self.num_heads = config.num_attention_heads
@@ -27,9 +28,7 @@ class GemmaCrossAttention(nn.Module):
         self.v_proj = nn.Linear(config.hidden_size, self.num_kv_heads * self.head_dim, bias=False)
         self.o_proj = nn.Linear(self.num_heads * self.head_dim, config.hidden_size, bias=False)
 
-    def forward(
-        self, hidden_states: torch.Tensor, encoder_hidden_states: torch.Tensor
-    ) -> torch.Tensor:
+    def forward(self, hidden_states: torch.Tensor, encoder_hidden_states: torch.Tensor) -> torch.Tensor:
         """Forward pass for cross-attention.
 
         Args:
@@ -43,12 +42,8 @@ class GemmaCrossAttention(nn.Module):
         _, src_len, _ = encoder_hidden_states.shape
 
         q = self.q_proj(hidden_states).view(batch, tgt_len, self.num_heads, self.head_dim)
-        k = self.k_proj(encoder_hidden_states).view(
-            batch, src_len, self.num_kv_heads, self.head_dim
-        )
-        v = self.v_proj(encoder_hidden_states).view(
-            batch, src_len, self.num_kv_heads, self.head_dim
-        )
+        k = self.k_proj(encoder_hidden_states).view(batch, src_len, self.num_kv_heads, self.head_dim)
+        v = self.v_proj(encoder_hidden_states).view(batch, src_len, self.num_kv_heads, self.head_dim)
 
         # Expand KV heads for GQA
         k = k.repeat_interleave(self.num_heads_per_group, dim=2)
@@ -61,11 +56,7 @@ class GemmaCrossAttention(nn.Module):
 
         # Non-causal attention across encoder length dimension
         attn_out = F.scaled_dot_product_attention(q_t, k_t, v_t, is_causal=False)
-        attn_out = (
-            attn_out.transpose(1, 2)
-            .contiguous()
-            .view(batch, tgt_len, self.num_heads * self.head_dim)
-        )
+        attn_out = attn_out.transpose(1, 2).contiguous().view(batch, tgt_len, self.num_heads * self.head_dim)
         return self.o_proj(attn_out)
 
 
@@ -73,6 +64,7 @@ class GemmaT5DecoderLayer(nn.Module):
     """Transformer decoder block with causal self-attention, cross-attention, and MLP."""
 
     def __init__(self, config: FoldGemmaConfig) -> None:
+        """Initialize GemmaT5DecoderLayer."""
         super().__init__()
         self.config = config
         self.input_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
@@ -82,9 +74,7 @@ class GemmaT5DecoderLayer(nn.Module):
         self.post_attention_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.mlp = GemmaMLP(config)
 
-    def forward(
-        self, hidden_states: torch.Tensor, encoder_hidden_states: torch.Tensor
-    ) -> torch.Tensor:
+    def forward(self, hidden_states: torch.Tensor, encoder_hidden_states: torch.Tensor) -> torch.Tensor:
         """Forward pass for decoder layer.
 
         Args:
@@ -116,17 +106,14 @@ class FoldT5Gemma(BaseFoldModel):
     """FoldT5Gemma encoder-decoder model with cross-attention and autoregressive generation."""
 
     def __init__(self, config: FoldGemmaConfig) -> None:
+        """Initialize FoldT5Gemma."""
         super().__init__(config)
         self.decoder_embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size)
-        self.decoder_layers = nn.ModuleList(
-            [GemmaT5DecoderLayer(config) for _ in range(config.num_hidden_layers)]
-        )
+        self.decoder_layers = nn.ModuleList([GemmaT5DecoderLayer(config) for _ in range(config.num_hidden_layers)])
         self.decoder_norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
-    def decode(
-        self, decoder_input_ids: torch.Tensor, encoder_hidden_states: torch.Tensor
-    ) -> torch.Tensor:
+    def decode(self, decoder_input_ids: torch.Tensor, encoder_hidden_states: torch.Tensor) -> torch.Tensor:
         """Runs decoder layers and lm_head on decoder input tokens and encoder hidden states.
 
         Args:
@@ -192,11 +179,8 @@ class FoldT5Gemma(BaseFoldModel):
         """
         encoder_hidden_states = self.encode(input_ids, plddt=plddt, plddt_threshold=plddt_threshold)
         batch_size = input_ids.shape[0]
-        decoder_input_ids = torch.full(
-            (batch_size, 1), bos_token_id, dtype=torch.long, device=input_ids.device
-        )
-        if eos_token_id is not None:
-            finished = torch.zeros(batch_size, dtype=torch.bool, device=input_ids.device)
+        decoder_input_ids = torch.full((batch_size, 1), bos_token_id, dtype=torch.long, device=input_ids.device)
+        finished = torch.zeros(batch_size, dtype=torch.bool, device=input_ids.device)
 
         for _ in range(max_new_tokens):
             logits = self.decode(decoder_input_ids, encoder_hidden_states)

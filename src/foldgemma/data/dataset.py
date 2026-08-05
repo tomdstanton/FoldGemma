@@ -1,8 +1,9 @@
 """PyTorch Dataset implementation for FoldGemma using binary memory mapping."""
 
+from __future__ import annotations
+
 import logging
 from pathlib import Path
-from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -13,7 +14,7 @@ from foldgemma.data.vocabulary import Protein3diVocabulary
 logger = logging.getLogger(__name__)
 
 
-class FoldGemmaDataset(Dataset):
+class FoldGemmaDataset(Dataset[dict[str, torch.Tensor]]):
     """Memory-mapped Structure-of-Arrays dataset for FoldGemma."""
 
     def __init__(
@@ -45,25 +46,30 @@ class FoldGemmaDataset(Dataset):
         self._plddt_mmap = None
 
     def __len__(self) -> int:
+        """Return number of samples."""
         return self.num_samples
 
-    def _init_memmaps(self):
+    def _init_memmaps(self) -> None:
         if self._inputs_mmap is None:
             self._inputs_mmap = np.memmap(self.data_dir / "inputs.bin", dtype="uint8", mode="r")
             self._targets_mmap = np.memmap(self.data_dir / "targets.bin", dtype="uint8", mode="r")
             self._plddt_mmap = np.memmap(self.data_dir / "plddt.bin", dtype="float32", mode="r")
 
-    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+    def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
+        """Get a single sample by index."""
         self._init_memmaps()
+        assert self._inputs_mmap is not None
+        assert self._targets_mmap is not None
+        assert self._plddt_mmap is not None
 
-        start = self.offsets[idx]
-        length = self.lengths[idx]
+        start = self.offsets[index]
+        length = self.lengths[index]
         end = start + length
 
         # Load raw bytes and convert to strings
         in_bytes = self._inputs_mmap[start:end].tobytes()
         tgt_bytes = self._targets_mmap[start:end].tobytes()
-        
+
         # Load pLDDT array (copy to avoid non-writable warnings when converting to Tensor)
         plddt_arr = self._plddt_mmap[start:end].copy()
 
@@ -71,9 +77,9 @@ class FoldGemmaDataset(Dataset):
         targets_str = tgt_bytes.decode("ascii")
 
         # Tokenize (CPU side)
-        input_ids = self.vocabulary.encode(inputs_str)[:self.max_length]
-        target_ids = self.vocabulary.encode(targets_str)[:self.max_length]
-        plddt_tensor = torch.from_numpy(plddt_arr)[:self.max_length]
+        input_ids = self.vocabulary.encode(inputs_str)[: self.max_length]
+        target_ids = self.vocabulary.encode(targets_str)[: self.max_length]
+        plddt_tensor = torch.from_numpy(plddt_arr)[: self.max_length]
 
         input_ids_tensor = torch.tensor(input_ids, dtype=torch.long)
         target_ids_tensor = torch.tensor(target_ids, dtype=torch.long)
@@ -88,10 +94,12 @@ class FoldGemmaDataset(Dataset):
 class DataCollatorForFoldGemma:
     """Collator that dynamically pads batches to the maximum length in the batch."""
 
-    def __init__(self, vocabulary: Protein3diVocabulary | None = None):
+    def __init__(self, vocabulary: Protein3diVocabulary | None = None) -> None:
+        """Initialize collator."""
         self.vocabulary = vocabulary or Protein3diVocabulary()
 
-    def __call__(self, features: List[Dict[str, torch.Tensor]]) -> Dict[str, torch.Tensor]:
+    def __call__(self, features: list[dict[str, torch.Tensor]]) -> dict[str, torch.Tensor]:
+        """Pad and collate a batch."""
         batch_size = len(features)
         max_len = max(f["input_ids"].size(0) for f in features)
 

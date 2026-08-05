@@ -1,8 +1,8 @@
-"""FoldGemma: Protein folding language models"""
+"""FoldGemma: Protein folding language models."""
 
 from foldgemma.config import FoldGemmaConfig, ModelType
-from foldgemma.models.foldgemma import FoldGemma
 from foldgemma.models.fold_t5gemma import FoldT5Gemma
+from foldgemma.models.foldgemma import FoldGemma
 from foldgemma.trainer import FoldGemmaTrainer
 
 __all__ = [
@@ -12,8 +12,3 @@ __all__ = [
     "FoldT5Gemma",
     "FoldGemmaTrainer",
 ]
-try:
-    from foldgemma.data.pipeline import FoldGemmaDataPipeline
-    __all__.append("FoldGemmaDataPipeline")
-except ImportError:
-    pass

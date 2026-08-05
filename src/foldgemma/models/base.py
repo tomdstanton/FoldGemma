@@ -13,12 +13,11 @@ class BaseFoldModel(nn.Module):
     """Abstract base class for Gemma transformer models with pLDDT mask ingestion."""
 
     def __init__(self, config: FoldGemmaConfig) -> None:
+        """Initialize BaseFoldModel."""
         super().__init__()
         self.config = config
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size)
-        self.layers = nn.ModuleList(
-            [GemmaDecoderLayer(config) for _ in range(config.num_hidden_layers)]
-        )
+        self.layers = nn.ModuleList([GemmaDecoderLayer(config) for _ in range(config.num_hidden_layers)])
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
     def encode(

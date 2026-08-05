@@ -1,10 +1,12 @@
 """Synthetic dummy protein data generator for FoldGemma."""
 
+from __future__ import annotations
+
 import random
 from pathlib import Path
-from typing import Sequence, Tuple
 
 import numpy as np
+import numpy.typing as npt
 
 from foldgemma.data.vocabulary import AMINO_ACIDS, THREE_DI_TOKENS
 
@@ -12,7 +14,7 @@ from foldgemma.data.vocabulary import AMINO_ACIDS, THREE_DI_TOKENS
 def generate_synthetic_protein(
     length: int,
     seed: int | None = None,
-) -> Tuple[str, str, np.ndarray]:
+) -> tuple[str, str, npt.NDArray[np.float32]]:
     """Generate a synthetic protein sample with AA sequence, 3di sequence, and pLDDT array.
 
     Args:
@@ -61,21 +63,22 @@ def write_synthetic_dataset(
     lengths = []
     current_offset = 0
 
-    with open(out_path / "inputs.bin", "wb") as f_in, \
-         open(out_path / "targets.bin", "wb") as f_tgt, \
-         open(out_path / "plddt.bin", "wb") as f_plddt:
-        
+    with (
+        open(out_path / "inputs.bin", "wb") as f_in,
+        open(out_path / "targets.bin", "wb") as f_tgt,
+        open(out_path / "plddt.bin", "wb") as f_plddt,
+    ):
         for i in range(num_examples):
             length = random.randint(min_len, max_len)
             inputs, targets, plddt = generate_synthetic_protein(length, seed=seed + i)
-            
+
             in_bytes = inputs.encode("ascii")
             tgt_bytes = targets.encode("ascii")
-            
+
             f_in.write(in_bytes)
             f_tgt.write(tgt_bytes)
             f_plddt.write(plddt.tobytes())
-            
+
             offsets.append(current_offset)
             lengths.append(length)
             current_offset += length

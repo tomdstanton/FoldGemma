@@ -1,11 +1,8 @@
 """Unit tests for Flax and PyTorch Gemma Bidirectional Encoder implementations."""
 
-from typing import cast
-
 import torch
 
-from foldgemma.models.gemma import FoldGemmaConfig
-from foldgemma.models.gemma import GemmaModel
+from foldgemma.models.gemma import FoldGemmaConfig, GemmaModel
 
 
 def test_gemma_config_defaults() -> None:
@@ -23,8 +20,6 @@ def test_gemma_config_defaults() -> None:
     assert config.rope_theta == 10000.0
 
 
-
-
 def test_gemma_model_init_and_forward() -> None:
     """Verify PyTorch Gemma model initialization and forward pass logits shape."""
     config = FoldGemmaConfig()
@@ -34,8 +29,7 @@ def test_gemma_model_init_and_forward() -> None:
     batch_size = 2
     seq_len = 16
     dummy_input_ids = (
-        torch.arange(batch_size * seq_len, dtype=torch.long).reshape((batch_size, seq_len))
-        % config.vocab_size
+        torch.arange(batch_size * seq_len, dtype=torch.long).reshape((batch_size, seq_len)) % config.vocab_size
     )
 
     with torch.no_grad():
@@ -44,8 +38,6 @@ def test_gemma_model_init_and_forward() -> None:
     assert logits.shape == (batch_size, seq_len, config.vocab_size)
     assert not torch.isnan(logits).any()
     assert not torch.isinf(logits).any()
-
-
 
 
 def test_bidirectional_attention_behavior() -> None:
@@ -67,12 +59,6 @@ def test_bidirectional_attention_behavior() -> None:
     assert token_0_diff > 1e-5, f"Expected non-zero difference at token 0, got {token_0_diff}"
 
 
-
-
-
-
-
-
 def test_base_fold_model_encode_and_plddt() -> None:
     """Verify PyTorch BaseFoldModel encode logic and pLDDT score mask ingestion."""
     from foldgemma.models.base import BaseFoldModel
@@ -83,8 +69,7 @@ def test_base_fold_model_encode_and_plddt() -> None:
 
     batch_size, seq_len = 2, 8
     dummy_input_ids = (
-        torch.arange(batch_size * seq_len, dtype=torch.long).reshape((batch_size, seq_len))
-        % config.vocab_size
+        torch.arange(batch_size * seq_len, dtype=torch.long).reshape((batch_size, seq_len)) % config.vocab_size
     )
 
     # Residues at indices (0, 1) and (1, 3) have pLDDT < 70.0
@@ -117,8 +102,7 @@ def test_foldgemma_forward() -> None:
 
     batch_size, seq_len = 2, 8
     dummy_input_ids = (
-        torch.arange(batch_size * seq_len, dtype=torch.long).reshape((batch_size, seq_len))
-        % config.vocab_size
+        torch.arange(batch_size * seq_len, dtype=torch.long).reshape((batch_size, seq_len)) % config.vocab_size
     )
 
     with torch.no_grad():
@@ -138,13 +122,9 @@ def test_fold_t5gemma_forward_and_generate() -> None:
     model.eval()
 
     batch_size, enc_len, dec_len = 2, 8, 4
-    input_ids = (
-        torch.arange(batch_size * enc_len, dtype=torch.long).reshape((batch_size, enc_len))
-        % config.vocab_size
-    )
+    input_ids = torch.arange(batch_size * enc_len, dtype=torch.long).reshape((batch_size, enc_len)) % config.vocab_size
     decoder_input_ids = (
-        torch.arange(batch_size * dec_len, dtype=torch.long).reshape((batch_size, dec_len))
-        % config.vocab_size
+        torch.arange(batch_size * dec_len, dtype=torch.long).reshape((batch_size, dec_len)) % config.vocab_size
     )
     plddt = torch.full((batch_size, enc_len), 85.0, dtype=torch.float32)
 
@@ -172,8 +152,5 @@ def test_fold_t5gemma_eos_early_stopping() -> None:
     input_ids_pt = torch.zeros((2, 4), dtype=torch.long)
     first_gen_pt = pt_model.generate(input_ids_pt, max_new_tokens=1, eos_token_id=None)
     predicted_eos_pt = int(first_gen_pt[0, 1])
-    gen_pt = pt_model.generate(
-        input_ids_pt, max_new_tokens=10, eos_token_id=predicted_eos_pt
-    )
+    gen_pt = pt_model.generate(input_ids_pt, max_new_tokens=10, eos_token_id=predicted_eos_pt)
     assert gen_pt.shape[1] == 2
-

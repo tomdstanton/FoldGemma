@@ -11,27 +11,27 @@ default:
 clean:
     rm -rf site
     find . -type d -name "__pycache__" -exec rm -rf {} +
-    find . -type d -name ".pytest_cache" -exec rm -rf {} +
+    find . -type d -name ".karva_cache" -exec rm -rf {} +
 
 install: clean
     uv sync
 
 # Run the test suite
 test: install
-    uv run pytest tests/
+    uv run karva test tests/
 
 # Format Python code
 fmt:
-    uv run black .
+    uvx ruff format .
 
 # Check Python formatting
 fmt-check:
-    uv run black --check .
+    uvx ruff format --check .
 
 # Lint Python code
 lint:
-    uv run ruff check .
-    uv run ty check
+    -uvx ruff check .
+    -uvx ty check .
 
 # Run the full CI pipeline locally (format check, lint, test)
 ci: fmt-check lint test

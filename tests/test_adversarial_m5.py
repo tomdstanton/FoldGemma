@@ -1,25 +1,21 @@
-"""Adversarial stress test suite for FoldGemma refactor (m5).
+"""Adversarial stress test suite for FoldGemma.
 
-Tests all 4 model instantiations (Flax FoldGemma, Flax FoldT5Gemma, PyTorch
-FoldGemma, PyTorch FoldT5Gemma) and high-level API wrappers
-(FoldGemmaTrainer, FoldGemmaInference) under edge-cases, extreme bounds,
-custom generation parameters, and dynamic configurations.
+Tests model instantiations (FoldGemma, FoldT5Gemma) and high-level API
+wrappers (FoldGemmaTrainer) under edge-cases, extreme bounds, and dynamic
+configurations.
 """
 
-
-from typing import cast
-
-import pytest
 import torch
 
-from foldgemma.trainer import FoldGemmaTrainer
 from foldgemma.config import FoldGemmaConfig, ModelType
-from foldgemma.models.foldgemma import FoldGemma
 from foldgemma.models.fold_t5gemma import FoldT5Gemma
+from foldgemma.models.foldgemma import FoldGemma
+from foldgemma.trainer import FoldGemmaTrainer
 
 # ============================================================================
 # Section 1: Direct Model Instantiations & Corner Cases (Batch Size, Seq Len, pLDDT)
 # ============================================================================
+
 
 def test_trainer_dynamic_instantiation() -> None:
     """Test FoldGemmaTrainer dynamic instantiation via Enum, string, and config override."""
@@ -47,7 +43,7 @@ def test_trainer_dynamic_instantiation() -> None:
 def test_all_masked_out_plddt_propagation() -> None:
     """Test that when pLDDT is all < threshold, model produces clean valid representations."""
     config = FoldGemmaConfig(model_type=ModelType.GEMMA)
-    
+
     # PyTorch
     torch_model = FoldGemma(config)
     torch_model.eval()
@@ -58,10 +54,4 @@ def test_all_masked_out_plddt_propagation() -> None:
             plddt=dummy_plddt_torch,
             plddt_threshold=70.0,
         )
-    assert (encoded_torch == 0.0).all(), (
-        "PyTorch encoded representations with 100% masked pLDDT are not all zeros"
-    )
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+    assert (encoded_torch == 0.0).all(), "PyTorch encoded representations with 100% masked pLDDT are not all zeros"

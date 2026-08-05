@@ -11,6 +11,7 @@ class FoldGemma(BaseFoldModel):
     """FoldGemma model with linear classification head returning 3di predictions."""
 
     def __init__(self, config: FoldGemmaConfig) -> None:
+        """Initialize FoldGemma."""
         super().__init__(config)
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
@@ -25,6 +26,7 @@ class FoldGemma(BaseFoldModel):
 
         Args:
             input_ids: Tensor of shape (batch, seq_len).
+            decoder_input_ids: Optional tensor of shape (batch, tgt_len). Unused for classification.
             plddt: Optional tensor of shape (batch, seq_len).
             plddt_threshold: Confidence threshold for pLDDT mask.
 

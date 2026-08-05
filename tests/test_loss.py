@@ -5,6 +5,7 @@ import torch
 from foldgemma.data.vocabulary import PAD_ID, UNK_ID
 from foldgemma.loss import MaskedCrossEntropyLoss
 
+
 def test_loss_mask_logic() -> None:
     """Verify that compute_loss_mask correctly identifies valid vs invalid tokens."""
     targets = torch.tensor([PAD_ID, UNK_ID, 5, 6, 7, 8])
@@ -57,7 +58,7 @@ def test_masked_tokens_contribute_zero_to_loss() -> None:
     torch.testing.assert_close(loss_1, loss_2, rtol=1e-5, atol=1e-5)
 
     # Manually compute expected loss for valid positions (idx 2 and idx 4)
-    raw_losses = torch.nn.functional.cross_entropy(logits_1, targets, reduction='none')
+    raw_losses = torch.nn.functional.cross_entropy(logits_1, targets, reduction="none")
     expected_loss = (raw_losses[2] + raw_losses[4]) / 2.0
 
     torch.testing.assert_close(loss_1, expected_loss, rtol=1e-5, atol=1e-5)

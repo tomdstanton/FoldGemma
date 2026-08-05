@@ -6,10 +6,12 @@ import torch.nn.functional as F
 
 from foldgemma.data.vocabulary import PAD_ID, UNK_ID
 
+
 class MaskedCrossEntropyLoss(nn.Module):
     """Composite masked cross entropy loss using PyTorch."""
-    
-    def __init__(self, pad_id: int = PAD_ID, unk_id: int = UNK_ID, plddt_threshold: float = 70.0):
+
+    def __init__(self, pad_id: int = PAD_ID, unk_id: int = UNK_ID, plddt_threshold: float = 70.0) -> None:
+        """Initialize loss function."""
         super().__init__()
         self.pad_id = pad_id
         self.unk_id = unk_id
@@ -29,16 +31,16 @@ class MaskedCrossEntropyLoss(nn.Module):
         plddt: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Compute composite masked cross entropy loss.
-        
+
         Returns:
             Scalar average loss divided ONLY by sum of valid mask.
         """
         vocab_size = logits.size(-1)
-        raw_loss = F.cross_entropy(logits.reshape(-1, vocab_size), targets.reshape(-1).long(), reduction='none')
+        raw_loss = F.cross_entropy(logits.reshape(-1, vocab_size), targets.reshape(-1).long(), reduction="none")
         raw_loss = raw_loss.view(targets.shape)
-        
+
         mask = self.compute_mask(targets, plddt).to(logits.dtype)
-        
+
         masked_loss = raw_loss * mask
         valid_count = mask.sum()
         return masked_loss.sum() / valid_count.clamp(min=1.0)

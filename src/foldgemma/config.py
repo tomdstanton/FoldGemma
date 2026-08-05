@@ -1,3 +1,5 @@
+"""Configuration dataclasses and enums for FoldGemma."""
+
 from dataclasses import dataclass
 from enum import Enum
 
@@ -19,7 +21,7 @@ class ModelSize(str, Enum):
 
 class OutputFormat(str, Enum):
     """Output format for inference."""
-    
+
     FASTA = "fasta"
     JSONL = "jsonl"
 
@@ -40,6 +42,7 @@ class FoldGemmaConfig:
     model_type: ModelType = ModelType.GEMMA
 
     def __post_init__(self) -> None:
+        """Coerce string model_type to ModelType enum."""
         if isinstance(self.model_type, str) and not isinstance(self.model_type, ModelType):
             object.__setattr__(self, "model_type", ModelType(self.model_type))
 
@@ -78,4 +81,3 @@ class FoldGemmaConfig:
             num_key_value_heads=16,
             model_type=model_type,
         )
-
