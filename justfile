@@ -71,3 +71,9 @@ compare-3di struct_fasta model_fasta:
 # Test mini3di package explicitly
 test-mini3di fasta_file:
     uv run --extra dev python scripts/test_mini3di.py {{fasta_file}}
+
+# --- HPC Scripts ---
+
+# Submit training job to Monash MASSIVE M3 SLURM cluster
+submit-train:
+    sbatch train.slurm
