@@ -209,6 +209,6 @@ class FoldGemmaTrainer:
             if on_epoch_end:
                 on_epoch_end(epoch, avg_loss)
 
-        if checkpoint_dir:
-            self.save_checkpoint(checkpoint_dir)
-            logger.info(f"Saved checkpoint to {checkpoint_dir}")
+            if checkpoint_dir:
+                self.save_checkpoint(checkpoint_dir)
+                logger.debug(f"Saved intermediate checkpoint to {checkpoint_dir}")
