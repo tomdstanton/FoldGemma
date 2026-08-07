@@ -46,10 +46,7 @@ all = [
 ]
 
 [dependency-groups]
-test = ["foldgemma[train]", "karva"]
-dev = [
-    { include-group = "test" },
-]
+dev = ["foldgemma[all]"]
 
 [project.urls]
 Homepage = "https://github.com/tomdstanton/FoldGemma"
@@ -74,7 +71,6 @@ version-file = "src/foldgemma/_version.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/foldgemma"]
 
-
 [tool.ruff]
 line-length = 120
 exclude = [
@@ -93,3 +89,5 @@ convention = "google"
 missing-type-argument = "error"
 possibly-unresolved-reference = "warn"
 
+[tool.karva.profile.default.coverage]
+branch = true
